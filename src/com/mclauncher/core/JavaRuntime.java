@@ -7,9 +7,12 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
 /**
- * Java 运行时自动供应：
- * 1. 自动检测本机/内置 Java；缺失时自动下载微软 OpenJDK 便携包并解压。
- * 2. 默认使用最新版 Java（探测 26 → 25 → … 取最新可达版本），游戏要求更高时按游戏要求。
+ * Java 运行时自动供应。
+ *
+ * 关键规则（老版本必须精确匹配）：
+ * - required <= 8（1.7 / 1.8 / 1.12 等）：**只接受完全等于该大版本的 Java**，
+ *   用 Java 17/25 启动这类版本会因模块系统/ASM 直接崩。
+ * - required >= 9：优先精确版本，找不到时退到 >= required 的可用版本。
  */
 public class JavaRuntime {
 
@@ -17,27 +20,77 @@ public class JavaRuntime {
         return cfg.gameDir.resolve("runtime").resolve("jdk-" + major);
     }
 
-    /** 按指定大版本确保可用，返回 java 可执行文件路径。
-     *  顺序：本启动器已下载的运行时 → 系统已安装 Java（自动探测，>= 目标版本）→ 自动下载微软 OpenJDK。 */
-    public static Path ensure(Config cfg, int major, Downloader.Listener l) throws Exception {
-        Path exe = findJava(runtimeDir(cfg, major));
+    /** 按版本 JSON 的 javaVersion.majorVersion 要求供给 Java（启动器和安装器共用）。 */
+    public static Path forVersion(Config cfg, String requiredMajor, Downloader.Listener l) throws Exception {
+        int required = parseMajor(requiredMajor);
+        if (required <= 8) return ensureExact(cfg, required, l);
+        try {
+            return ensureExact(cfg, required, l);
+        } catch (Exception exactFail) {
+            try { return ensure(cfg, required, l); }
+            catch (Exception ignored) { throw exactFail; }
+        }
+    }
+
+    public static int parseMajor(String s) {
+        if (s == null) return 17;
+        try { return Integer.parseInt(s.trim()); }
+        catch (Exception e) { return 17; }
+    }
+
+    /** 精确匹配：只认 major 完全相同的运行时。 */
+    public static Path ensureExact(Config cfg, int major, Downloader.Listener l) throws Exception {
+        Path exe = findInRuntime(cfg, major);
         if (exe != null) return exe;
+        Path sys = detectSystemJava(major, true);
+        if (sys != null) { l.status("复用系统已安装的 Java " + major + "：" + sys); return sys; }
+        return download(cfg, major, l);
+    }
 
-        Path sys = detectSystemJava(major);
-        if (sys != null) { l.status("复用系统已安装的 Java " + versionOf(sys)); return sys; }
+    /** 至少版本：>= major 的最高可用（现代版本可接受更高 Java 时使用）。 */
+    public static Path ensure(Config cfg, int major, Downloader.Listener l) throws Exception {
+        Path exe = findInRuntime(cfg, major);
+        if (exe != null) return exe;
+        Path sys = detectSystemJava(major, false);
+        if (sys != null) { l.status("复用系统已安装 Java " + versionOf(sys)); return sys; }
+        return download(cfg, major, l);
+    }
 
+    /** 兼容旧调用：等价于「按游戏要求供 Java」。 */
+    public static Path ensureLatest(Config cfg, int requiredMajor, Downloader.Listener l) throws Exception {
+        return forVersion(cfg, String.valueOf(requiredMajor), l);
+    }
+
+    /* ---------- 已下载的运行时 ---------- */
+    private static Path findInRuntime(Config cfg, int major) {
+        Path dir = runtimeDir(cfg, major);
+        if (!Files.exists(dir)) return null;
+        Path exe = findJava(dir);
+        if (exe == null) return null;
+        try {
+            int actual = versionOf(exe);
+            return actual == major ? exe : null;   // 目录名骗不了人：版本对不上就不用
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    /* ---------- 下载 ---------- */
+    private static Path download(Config cfg, int major, Downloader.Listener l) throws Exception {
         Path base = runtimeDir(cfg, major);
         Files.createDirectories(base);
-        String osName = Downloader.detectOs().equals("windows") ? "windows"
-                : Downloader.detectOs().equals("osx") ? "macos" : "linux";
-        String arch = Downloader.detectArch().equals("aarch64") ? "aarch64" : "x64";
-        String url = "https://aka.ms/download-jdk/microsoft-jdk-" + major + "-" + osName + "-" + arch + ".zip";
+        String os = osToken(), arch = archToken();
 
-        Path zip = base.resolve("jdk-" + major + ".zip");
+        String url = downloadUrl(major, os, arch);
+        if (url == null)
+            throw new Exception("无法自动下载 Java " + major + "：请手动安装 JDK " + major
+                    + " 并设置 JAVA_HOME（老版本对 Java 版本是精确要求的）");
+
+        Path archive = base.resolve("jdk-" + major + ".zip");
         l.status("正在下载 Java " + major + " 运行时…");
         Exception last = null;
         for (int attempt = 0; attempt < 8; attempt++) {
-            try { Http.download(url, zip, p -> {}); last = null; break; }
+            try { Http.download(url, archive, p -> {}); last = null; break; }
             catch (Exception e) {
                 last = e;
                 boolean rate = e.getMessage() != null && e.getMessage().contains("403");
@@ -47,54 +100,44 @@ public class JavaRuntime {
         if (last != null) throw new Exception("Java 运行时下载失败: " + last.getMessage());
 
         l.status("正在解压 Java 运行时…");
-        unzip(zip, base);
-        Files.deleteIfExists(zip);
-        exe = findJava(base);
+        unzip(archive, base);
+        Files.deleteIfExists(archive);
+        Path exe = findJava(base);
         if (exe == null) throw new Exception("解压后未找到 java 可执行文件");
         return exe;
     }
 
-    /** 默认策略：使用最新版 Java。已安装的最高版本可用则直接用，否则下载最新可达版本（不早于游戏要求）。 */
-    public static Path ensureLatest(Config cfg, int requiredMajor, Downloader.Listener l) throws Exception {
-        // 1. 复用已安装且满足要求的最新版本
-        Path runtimeRoot = cfg.gameDir.resolve("runtime");
-        int best = -1;
-        Path bestExe = null;
-        if (Files.isDirectory(runtimeRoot)) {
-            try (var s = Files.list(runtimeRoot)) {
-                for (Path d : (Iterable<Path>) s::iterator) {
-                    String n = d.getFileName().toString();
-                    if (!n.startsWith("jdk-")) continue;
-                    try {
-                        int m = Integer.parseInt(n.substring(4));
-                        Path exe = findJava(d);
-                        if (m >= requiredMajor && m > best && exe != null) { best = m; bestExe = exe; }
-                    } catch (NumberFormatException ignore) {}
-                }
-            }
-        }
-        if (bestExe != null) return bestExe;
-
-        // 2. 从最新向下探测可达的版本并下载
-        int probeMax = Math.max(requiredMajor, 26);
-        for (int m = probeMax; m >= requiredMajor; m--) {
-            if (headAvailable(cfg, m)) {
-                Path exe = ensure(cfg, m, l);
-                if (exe != null) return exe;
-            }
-        }
-        // 3. 兜底：按游戏要求版本下载
-        return ensure(cfg, requiredMajor, l);
+    /**
+     * Java 下载地址：
+     * - 11/17/21/25 等：微软 OpenJDK（aka.ms 直链，国内可达）
+     * - 8：微软已不再提供，改走 Adoptium（Eclipse Temurin），仅 Windows 提供 zip
+     */
+    private static String downloadUrl(int major, String os, String arch) {
+        // 32 位系统：微软不提供 x86 构建，统一走 Adoptium（Temurin）的 x86 包
+        if ("x86".equals(arch))
+            return "https://api.adoptium.net/v3/binary/latest/" + major + "/ga/" + os + "/x86"
+                    + "/jdk/hotspot/normal/eclipse";
+        if (major >= 11)
+            return "https://aka.ms/download-jdk/microsoft-jdk-" + major + "-" + os + "-" + arch + ".zip";
+        if (major == 8 && "windows".equals(os))
+            return "https://api.adoptium.net/v3/binary/latest/8/ga/windows/" + arch
+                    + "/jdk/hotspot/normal/eclipse";
+        return null;
     }
 
-    private static boolean headAvailable(Config cfg, int major) {
-        String osName = Downloader.detectOs().equals("windows") ? "windows"
-                : Downloader.detectOs().equals("osx") ? "macos" : "linux";
-        String arch = Downloader.detectArch().equals("aarch64") ? "aarch64" : "x64";
-        String url = "https://aka.ms/download-jdk/microsoft-jdk-" + major + "-" + osName + "-" + arch + ".zip";
-        return Http.headOk(url);
+    private static String osToken() {
+        String o = Downloader.detectOs();
+        return o.equals("windows") ? "windows" : o.equals("osx") ? "macos" : "linux";
     }
 
+    private static String archToken() {
+        String a = Downloader.detectArch();
+        if (a.equals("aarch64")) return "aarch64";
+        if (a.equals("x86")) return "x86";
+        return "x64";
+    }
+
+    /* ---------- 系统探测 ---------- */
     private static Path findJava(Path dir) {
         if (dir == null || !Files.exists(dir)) return null;
         String name = Downloader.detectOs().equals("windows") ? "java.exe" : "java";
@@ -105,8 +148,11 @@ public class JavaRuntime {
         } catch (Exception e) { return null; }
     }
 
-    /** 自动探测系统已安装的 Java：扫描 JAVA_HOME 与常见安装目录，验证版本后返回满足 >=major 的最高可用版。 */
-    static Path detectSystemJava(int major) throws Exception {
+    /**
+     * 扫描 JAVA_HOME 与常见安装目录。
+     * exact=true：只要版本完全等于 major；exact=false：要 >= major 的最高版本。
+     */
+    static Path detectSystemJava(int major, boolean exact) throws Exception {
         java.util.List<Path> roots = new java.util.ArrayList<>();
         String home = System.getenv("JAVA_HOME");
         if (home != null && !home.isBlank()) roots.add(java.nio.file.Path.of(home));
@@ -124,7 +170,8 @@ public class JavaRuntime {
                 roots.add(java.nio.file.Path.of(p));
         }
         String javaName = win ? "java.exe" : "java";
-        int best = -1; Path bestExe = null;
+        int best = -1;
+        Path bestExe = null;
         for (Path r : roots) {
             if (!Files.isDirectory(r)) continue;
             try (var s = Files.list(r)) {
@@ -134,7 +181,9 @@ public class JavaRuntime {
                     if (!Files.isRegularFile(exe)) continue;
                     try {
                         int v = versionOf(exe);
-                        if (v >= major && v > best) { best = v; bestExe = exe; }
+                        if (exact ? v == major : v >= major) {
+                            if (v > best) { best = v; bestExe = exe; }
+                        }
                     } catch (Exception ignore) {}
                 }
             } catch (Exception ignore) {}
@@ -149,9 +198,15 @@ public class JavaRuntime {
         Process p = pb.start();
         String out = new String(p.getInputStream().readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
         p.waitFor();
+        // Java 8 输出形如 `1.8.0_xxx`，其余形如 `21.0.x`
         java.util.regex.Matcher m = java.util.regex.Pattern.compile("version \"(\\d+)").matcher(out);
         if (!m.find()) throw new Exception("无法解析 Java 版本");
-        return Integer.parseInt(m.group(1));
+        int major = Integer.parseInt(m.group(1));
+        if (major == 1) {
+            java.util.regex.Matcher m2 = java.util.regex.Pattern.compile("version \"1\\.(\\d+)").matcher(out);
+            if (m2.find()) return Integer.parseInt(m2.group(1));
+        }
+        return major;
     }
 
     /** 对外：解析给定 java 可执行文件的大版本号。 */

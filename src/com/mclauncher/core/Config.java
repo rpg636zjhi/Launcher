@@ -18,8 +18,8 @@ public class Config {
     public int windowHeight = 640;
     public int memoryMb = 2048;
     public String selectedVersion = "";
-    /** 0=自动使用最新版 Java；>0=固定使用指定大版本（默认 25）。 */
-    public int javaMajor = 25;
+    /** -1=按游戏版本要求（默认，最稳）；0=使用最新版；>0=固定指定大版本（仅兼容时生效）。 */
+    public int javaMajor = -1;
     public List<Map<String,Object>> accounts = new ArrayList<>();
     public int selectedAccount = -1;
 
@@ -39,7 +39,7 @@ public class Config {
                 c.windowHeight = Json.intVal(m, "windowHeight", 640);
                 c.memoryMb = Json.intVal(m, "memoryMb", 2048);
                 c.selectedVersion = Json.str(m, "selectedVersion");
-                c.javaMajor = Json.intVal(m, "javaMajor", 25);
+                c.javaMajor = Json.intVal(m, "javaMajor", -1);
                 c.accounts = new ArrayList<>();
                 List<Object> a = Json.arr(m, "accounts");
                 if (a != null) for (Object o : a) c.accounts.add(Json.obj(o));

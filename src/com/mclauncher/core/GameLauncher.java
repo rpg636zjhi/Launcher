@@ -53,9 +53,12 @@ public class GameLauncher {
         List<String> cmd = new ArrayList<>();
         cmd.add(resolveJava());
 
-        // JVM：内存
-        cmd.add("-Xms" + Math.max(512, cfg.memoryMb / 2) + "M");
-        cmd.add("-Xmx" + cfg.memoryMb + "M");
+        // JVM：内存（32 位 JVM 可用堆约 1.5G，写 2048M 会直接起不来）
+        int heap = cfg.memoryMb;
+        if ("32".equals(System.getProperty("sun.arch.data.model", "64")))
+            heap = Math.min(heap, 1536);
+        cmd.add("-Xms" + Math.max(512, heap / 2) + "M");
+        cmd.add("-Xmx" + heap + "M");
 
         // 皮肤站 authlib-injector
         if ("skinstation".equals(account.type) && account.skinServer != null) {
@@ -64,10 +67,11 @@ public class GameLauncher {
             cmd.add("-Dauthlibinjector.side=client");
         }
 
-        // classpath
+        // classpath：客户端 jar 排第一（Forge 等继承版本指向父版本的 jar）
         List<String> cp = new ArrayList<>();
-        Path clientJar = cfg.gameDir.resolve("versions").resolve(currentVersionId())
-                                    .resolve(currentVersionId() + ".jar");
+        Path clientJar = base.clientJar != null ? base.clientJar
+                : cfg.gameDir.resolve("versions").resolve(currentVersionId())
+                             .resolve(currentVersionId() + ".jar");
         cp.add(clientJar.toString());
         cp.addAll(base.classpath);
         if (mod != null) cp.addAll(mod.classpath);
@@ -233,18 +237,39 @@ public class GameLauncher {
         return out.toString();
     }
 
+    /**
+     * 选择 Java：**以版本 JSON 的 javaVersion 要求为准**。
+     * - 老版本（<=8）必须精确匹配，绝不降级到高版本（否则模块系统/ASM 直接崩）。
+     * - 现代版本优先精确，拿不到时退到 >= 要求的可用版本。
+     * - 手动配置的 javaPath / 下拉里选的 javaMajor 只有「兼容」时才会生效，不兼容就忽略并提示。
+     */
     private String resolveJava() throws Exception {
-        // 1. 下拉里明确指定的 Java 版本优先（Java 25 / 固定 17），确保"选了什么就用什么"
-        int required = Integer.parseInt(base.javaVersionMajor);
+        int required = JavaRuntime.parseMajor(base.javaVersionMajor);
         Downloader.Listener silent = new Downloader.Listener() {
             public void status(String m) {}
             public void progress(int d, int t) {}
         };
-        if (cfg.javaMajor > 0) return JavaRuntime.ensure(cfg, cfg.javaMajor, silent).toString();
-        // 2. 未指定版本时才用手动配置的 java 路径作兜底
-        if (cfg.javaPath != null && !cfg.javaPath.isEmpty() && Files.exists(Path.of(cfg.javaPath)))
-            return cfg.javaPath;
-        // 3. 自动：最新版或按游戏要求版本
-        return JavaRuntime.ensureLatest(cfg, required, silent).toString();
+
+        // 1. 手动指定的 java：版本兼容才用
+        if (cfg.javaPath != null && !cfg.javaPath.isEmpty() && Files.exists(Path.of(cfg.javaPath))) {
+            int v = -1;
+            try { v = JavaRuntime.detectMajor(Path.of(cfg.javaPath)); } catch (Exception ignore) {}
+            if (v > 0 && compatible(v, required)) return cfg.javaPath;
+            System.err.println("[Java] 手动指定的 Java " + v + " 不满足版本 " + required + " 的要求，已改用自动选择");
+        }
+
+        // 2. 显式选择的 javaMajor：仅在与版本要求兼容时生效
+        int target = required;
+        if (cfg.javaMajor > 0 && compatible(cfg.javaMajor, required)) target = cfg.javaMajor;
+
+        // 3. 按版本要求供给
+        return JavaRuntime.forVersion(cfg, String.valueOf(target), silent).toString();
+    }
+
+    /** v 能否启动要求 required 的版本。老版本对 Java 版本极其敏感，只认精确值。 */
+    private static boolean compatible(int v, int required) {
+        if (required <= 8) return v == required;
+        // 过高版本也可能出问题（尤其带 mixin/ASM 的加载器），给一个上限
+        return v >= required && v <= required + 6;
     }
 }

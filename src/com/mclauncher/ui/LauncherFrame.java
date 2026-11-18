@@ -165,8 +165,8 @@ public class LauncherFrame extends JFrame {
         darkCombo(memorySpinner);
         mirrorBox = new JComboBox<>(new String[]{"bmclapi 国内镜像", "mojang 官方"});
         mirrorBox.setSelectedIndex("mojang".equals(cfg.downloadMirror) ? 1 : 0);
-        javaModeBox = new JComboBox<>(new String[]{"Java 25（推荐）", "自动：使用最新版 Java", "按游戏要求版本", "固定 Java 17"});
-        int jmi = cfg.javaMajor == 25 ? 0 : (cfg.javaMajor == 0 ? 1 : (cfg.javaMajor == -1 ? 2 : 3));
+        javaModeBox = new JComboBox<>(new String[]{"自动：按游戏版本要求（推荐）", "自动：使用最新版 Java", "固定 Java 17", "固定 Java 21"});
+        int jmi = cfg.javaMajor == 0 ? 1 : (cfg.javaMajor == 17 ? 2 : (cfg.javaMajor == 21 ? 3 : 0));
         javaModeBox.setSelectedIndex(jmi);
         dark(bottom, memorySpinner, mirrorBox, javaModeBox);
         JLabel lblMem = new JLabel("内存(MB):"); lblMem.setForeground(FG);
@@ -214,7 +214,7 @@ public class LauncherFrame extends JFrame {
     private JPanel buildLoaderTab() {
         JPanel p = cardPanel();
         p.add(sectionLabel("选择 Mod 加载器（随启动自动安装）"));
-        loaderKindBox = new JComboBox<>(new String[]{"Fabric", "Quilt"});
+        loaderKindBox = new JComboBox<>(new String[]{"Fabric", "Quilt", "Forge", "NeoForge"});
         loaderVersionBox = new JComboBox<>();
         dark(loaderKindBox, loaderVersionBox);
         loaderKindBox.addActionListener(e -> loadLoaderVersions());
@@ -356,19 +356,33 @@ public class LauncherFrame extends JFrame {
     }
 
     private void loadLoaderVersions() {
-        String kind = loaderKindBox.getSelectedIndex() == 1 ? ModLoaderManager.QUILT : ModLoaderManager.FABRIC;
+        final String kind = selectedLoaderKind();
+        final VersionManager.VersionEntry entry = (VersionManager.VersionEntry) versionBox.getSelectedItem();
+        final String mc = entry != null ? entry.id : cfg.selectedVersion;
         setBusy(true);
         new Thread(() -> {
             try {
-                List<String> versions = ModLoaderManager.listLoaderVersions(kind);
+                List<String> versions = ModLoaderManager.listLoaderVersions(kind, mc);
                 SwingUtilities.invokeLater(() -> {
                     loaderVersionBox.removeAllItems();
                     for (String v : versions) loaderVersionBox.addItem(v);
+                    log(kind + " 版本已加载（MC " + mc + "），共 " + versions.size() + " 个");
                 });
             } catch (Exception e) {
                 SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(this, errText(e)));
             } finally { SwingUtilities.invokeLater(() -> setBusy(false)); }
         }).start();
+    }
+
+    /** 加载器下拉 → 内部 kind 标识。 */
+    private String selectedLoaderKind() {
+        int i = loaderKindBox == null ? 0 : loaderKindBox.getSelectedIndex();
+        switch (i) {
+            case 1: return ModLoaderManager.QUILT;
+            case 2: return ModLoaderManager.FORGE;
+            case 3: return ModLoaderManager.NEOFORGE;
+            default: return ModLoaderManager.FABRIC;
+        }
     }
 
     /* ---------- 整合包 ---------- */
@@ -447,7 +461,7 @@ public class LauncherFrame extends JFrame {
         cfg.memoryMb = (Integer) memorySpinner.getValue();
         cfg.downloadMirror = mirrorBox.getSelectedIndex() == 1 ? "mojang" : "bmclapi";
         int javaMode = javaModeBox.getSelectedIndex();
-        cfg.javaMajor = javaMode == 0 ? 25 : (javaMode == 1 ? 0 : (javaMode == 2 ? -1 : 17));
+        cfg.javaMajor = javaMode == 0 ? -1 : (javaMode == 1 ? 0 : (javaMode == 2 ? 17 : 21));
         cfg.save();
 
         setBusy(true);
@@ -472,13 +486,24 @@ public class LauncherFrame extends JFrame {
 
                 // 加载器：整合包指定，或手动选择
                 String loaderKind = currentPack != null ? currentPack.loaderKind
-                        : (loaderKindBox != null && loaderVersionBox.getItemCount() > 0
-                           ? (loaderKindBox.getSelectedIndex() == 1 ? ModLoaderManager.QUILT : ModLoaderManager.FABRIC) : null);
+                        : (loaderVersionBox != null && loaderVersionBox.getItemCount() > 0
+                           && loaderVersionBox.getSelectedItem() != null ? selectedLoaderKind() : null);
                 String loaderVer = currentPack != null ? currentPack.loaderVersion
                         : (loaderVersionBox != null && loaderVersionBox.getSelectedItem() != null
                            ? loaderVersionBox.getSelectedItem().toString() : null);
-                if (loaderKind != null && loaderVer != null)
-                    modProfile = ModLoaderManager.install(cfg, loaderKind, mcId, loaderVer, uiListener());
+                if (loaderKind != null && loaderVer != null) {
+                    if (ModLoaderManager.isInstallerBased(loaderKind)) {
+                        // Forge / NeoForge：跑官方安装器 → 生成继承版本 → 再按继承合并父版本
+                        Path javaExe = JavaRuntime.forVersion(cfg, result.javaVersionMajor, uiListener());
+                        ModLoaderManager.ModProfile forge = ModLoaderManager.installForge(
+                                cfg, loaderKind, mcId, loaderVer, javaExe, uiListener());
+                        result = Downloader.installLocal(cfg, forge.installedVersionId, uiListener());
+                        modProfile = null;
+                        log(loaderKind + " " + loaderVer + " 已就绪");
+                    } else {
+                        modProfile = ModLoaderManager.install(cfg, loaderKind, mcId, loaderVer, uiListener());
+                    }
+                }
 
                 Path gameDir = currentPack != null ? currentPack.instanceDir : null;
                 GameLauncher launcher = new GameLauncher(cfg, acc, result, modProfile, gameDir);

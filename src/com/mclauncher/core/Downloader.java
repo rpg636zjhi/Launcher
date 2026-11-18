@@ -24,6 +24,10 @@ public class Downloader {
         public String assetIndexId;
         public String mainClass;
         public String javaVersionMajor = "17";
+        /** 本次安装/解析的版本 id（Forge 等继承版本里是子版本 id）。 */
+        public String versionId;
+        /** 实际客户端 jar：继承版本（Forge/NeoForge）指向父版本的 jar。 */
+        public Path clientJar;
     }
 
     private static final String RES_BASE = "https://resources.download.minecraft.net/";
@@ -48,6 +52,7 @@ public class Downloader {
         }
         Map<String,Object> vj = Json.obj(Json.parse(jsonText));
         r.versionJson = vj;
+        r.versionId = versionId;
         r.mainClass = Json.str(vj, "mainClass");
         Map<String,Object> jvInfo = Json.obj(vj, "javaVersion");
         Number jvMajor = jvInfo == null ? null : Json.num(jvInfo, "majorVersion");
@@ -55,6 +60,7 @@ public class Downloader {
 
         // 2. 客户端 jar（多源：官方 → 镜像对象路径 → 镜像版本路由 → launcher.mojang）
         Path jar = vdir.resolve(versionId + ".jar");
+        r.clientJar = jar;
         Map<String,Object> client = Json.obj(Json.obj(vj, "downloads"), "client");
         if (client != null) {
             String jarUrl = Json.str(client, "url");
@@ -98,11 +104,17 @@ public class Downloader {
         if (natives != null) {
             String classifier = pickNatives(natives);
             Map<String,Object> classifiers = Json.obj(dl, "classifiers");
-            Map<String,Object> artifact = Json.obj(classifiers, classifier);
+            Map<String,Object> artifact = classifiers == null ? null : Json.obj(classifiers, classifier);
+            // 32 位 / arm64 需要对应架构的本地库（如 natives-windows -> natives-windows-x86）
+            if (artifact == null && classifiers != null) {
+                String alt = classifier + archSuffix();
+                artifact = Json.obj(classifiers, alt);
+                if (artifact != null) classifier = alt;
+            }
             if (artifact != null) {
                 Path f = libPath(cfg, lib, artifact, classifier);
                 String url = Json.str(artifact, "url");
-                if (url == null) url = mavenUrl(cfg, Json.str(lib, "name") + ":" + classifier);
+                if (url == null) url = libraryUrl(cfg, lib, classifier);
                 if (url == null) return;
                 downloadAny(candidates(cfg, url), f, Json.str(artifact, "sha1"), cfg);
                 extractNatives(f, r.nativesDir, lib);
@@ -112,7 +124,7 @@ public class Downloader {
             if (artifact != null) {
                 Path f = libPath(cfg, lib, artifact, null);
                 String url = Json.str(artifact, "url");
-                if (url == null) url = mavenUrl(cfg, Json.str(lib, "name"));
+                if (url == null) url = libraryUrl(cfg, lib, null);
                 if (url == null) return;
                 downloadAny(candidates(cfg, url), f, Json.str(artifact, "sha1"), cfg);
                 r.classpath.add(f.toString());
@@ -130,6 +142,15 @@ public class Downloader {
         if (url.startsWith("https://piston-data.mojang.com/")) {
             String tail = url.substring("https://piston-data.mojang.com/".length());
             cands.add(cfg.mirrorBase() + "/" + tail);
+        }
+        // Forge / NeoForge / Fabric 的 maven 也走 BMCLAPI 的 /maven/ 代理，避免境外直连龟速
+        for (String mvn : new String[]{"https://maven.minecraftforge.net/",
+                                       "https://maven.neoforged.net/releases/",
+                                       "https://maven.fabricmc.net/"}) {
+            if (url.startsWith(mvn)) {
+                cands.add(cfg.mirrorBase() + "/maven/" + url.substring(mvn.length()));
+                break;
+            }
         }
         return cands;
     }
@@ -178,14 +199,35 @@ public class Downloader {
         return cfg.gameDir.resolve("libraries").resolve(rel.replace('/', java.io.File.separatorChar));
     }
 
-    private static String mavenUrl(Config cfg, String name) {
+    private static String mavenUrl(Config cfg, String name) { return mavenUrl(cfg, name, null); }
+
+    private static String mavenUrl(Config cfg, String name, String classifier) {
+        String rel = mavenRelPath(name, classifier);
+        if (rel == null) return null;
+        String base = "mojang".equals(cfg.downloadMirror) ? "https://libraries.minecraft.net"
+                                                          : cfg.mirrorBase() + "/libraries";
+        return base + "/" + rel;
+    }
+
+    /** 库地址：优先用 lib 自带的 url 仓库前缀（Forge/NeoForge 的库都带自己的 maven），否则退回镜像。 */
+    private static String libraryUrl(Config cfg, Map<String,Object> lib, String classifier) {
+        String name = Json.str(lib, "name");
+        String repo = Json.str(lib, "url");
+        if (repo != null && name != null) {
+            String rel = mavenRelPath(name, classifier);
+            if (rel != null) return repo.endsWith("/") ? repo + rel : repo + "/" + rel;
+        }
+        return name == null ? null : mavenUrl(cfg, name, classifier);
+    }
+
+    /** maven 坐标 → 相对路径：group:artifact:version[:classifier]。 */
+    private static String mavenRelPath(String name, String classifier) {
+        if (name == null) return null;
         String[] p = name.split(":");
         if (p.length < 3) return null;
         String group = p[0].replace('.', '/');
-        String cls = p.length > 3 ? "-" + p[3] : "";
-        String base = "mojang".equals(cfg.downloadMirror) ? "https://libraries.minecraft.net"
-                                                          : cfg.mirrorBase() + "/libraries";
-        return base + "/" + group + "/" + p[1] + "/" + p[2] + "/" + p[1] + "-" + p[2] + cls + ".jar";
+        String cls = p.length > 3 ? "-" + p[3] : (classifier != null ? "-" + classifier : "");
+        return group + "/" + p[1] + "/" + p[2] + "/" + p[1] + "-" + p[2] + cls + ".jar";
     }
 
     private static boolean rulesAllow(Map<String,Object> lib) {
@@ -221,6 +263,12 @@ public class Downloader {
     private static String pickNatives(Map<String,Object> natives) {
         String c = Json.str(natives, OS);
         return c == null ? "natives-" + OS : c;
+    }
+
+    /** 非 x64 架构在本地库 classifier 上的后缀；x64 返回空串 */
+    private static String archSuffix() {
+        String a = detectArch();
+        return a.equals("x86") ? "-x86" : a.equals("aarch64") ? "-arm64" : "";
     }
 
     private static void extractNatives(Path jar, Path nativesDir, Map<String,Object> lib) throws Exception {
@@ -317,6 +365,118 @@ public class Downloader {
         }
         installAssets(cfg, vj, wrap, new Result());
         return fixed[0];
+    }
+
+    /* ---------- 继承版本（Forge / NeoForge） ---------- */
+
+    /**
+     * 读取并安装「本地已存在、且带 inheritsFrom 的版本」。
+     * Forge / NeoForge 安装器会在 versions/&lt;id&gt;/ 下生成这种 json：只写自己的库、主类和参数，
+     * 真实的客户端文件必须继承父版本（原版）。
+     */
+    public static Result installLocal(Config cfg, String versionId, Listener l) throws Exception {
+        Path vjson = cfg.gameDir.resolve("versions").resolve(versionId).resolve(versionId + ".json");
+        if (!Files.exists(vjson))
+            throw new Exception("版本 " + versionId + " 尚未安装（缺少 " + vjson + "），请先安装加载器");
+        Map<String,Object> child = Json.obj(Json.parse(new String(Files.readAllBytes(vjson), StandardCharsets.UTF_8)));
+
+        String parentId = Json.str(child, "inheritsFrom");
+        if (parentId == null || parentId.isEmpty()) {
+            return install(cfg, versionId, manifestUrlFor(cfg, versionId), l);
+        }
+
+        l.status("正在准备父版本 " + parentId + "…");
+        Path pjson = cfg.gameDir.resolve("versions").resolve(parentId).resolve(parentId + ".json");
+        String parentUrl = Files.exists(pjson) ? null : manifestUrlFor(cfg, parentId);
+        Result r = install(cfg, parentId, parentUrl, l);
+
+        l.status("正在合并 " + versionId + " 的库与启动参数…");
+        mergeChild(cfg, child, r, l);
+        return r;
+    }
+
+    /** 把子版本（加载器）的库/主类/参数合并进父版本结果，并重建 classpath。 */
+    private static void mergeChild(Config cfg, Map<String,Object> child, Result r, Listener l) throws Exception {
+        String childId = Json.str(child, "id");
+
+        // 1. 库合并：按 group:artifact 去重，子版本优先（覆盖父版本的旧版本号）
+        List<Map<String,Object>> merged = new ArrayList<>();
+        java.util.Map<String,Integer> byKey = new java.util.HashMap<>();
+        List<Object> parentLibs = Json.arr(r.versionJson, "libraries");
+        if (parentLibs != null) for (Object o : parentLibs) {
+            Map<String,Object> lib = Json.obj(o);
+            if (!rulesAllow(lib)) continue;
+            String key = groupArtifact(Json.str(lib, "name"));
+            if (key != null && byKey.containsKey(key)) continue;   // 父版本内自身去重
+            merged.add(lib);
+            if (key != null) byKey.put(key, merged.size() - 1);
+        }
+        List<Object> childLibs = Json.arr(child, "libraries");
+        if (childLibs != null) for (Object o : childLibs) {
+            Map<String,Object> lib = Json.obj(o);
+            if (!rulesAllow(lib)) continue;
+            String key = groupArtifact(Json.str(lib, "name"));
+            Integer at = key == null ? null : byKey.get(key);
+            if (at != null) merged.set(at, lib);
+            else { merged.add(lib); if (key != null) byKey.put(key, merged.size() - 1); }
+        }
+
+        // 2. 按合并后的顺序重建 classpath（已下载过的文件只做 sha1 校验，不会重下）
+        r.classpath.clear();
+        int total = merged.size(), done = 0;
+        for (Map<String,Object> lib : merged) {
+            l.status("正在检查库文件 (" + (++done) + "/" + total + ")");
+            l.progress(done, total);
+            installLibrary(cfg, lib, r);
+        }
+
+        // 3. 合并版本 JSON：id / mainClass / arguments / minecraftArguments / javaVersion
+        Map<String,Object> vj = new java.util.LinkedHashMap<>(r.versionJson);
+        vj.put("id", childId == null ? r.versionId : childId);
+        vj.put("libraries", new ArrayList<Object>(merged));
+
+        String childMain = Json.str(child, "mainClass");
+        if (childMain != null) { vj.put("mainClass", childMain); r.mainClass = childMain; }
+
+        Map<String,Object> pa = Json.obj(r.versionJson, "arguments");
+        Map<String,Object> ca = Json.obj(child, "arguments");
+        if (ca != null) {
+            List<Object> jvm = new ArrayList<>();
+            List<Object> pjvm = Json.arr(pa, "jvm"); if (pjvm != null) jvm.addAll(pjvm);
+            List<Object> cjvm = Json.arr(ca, "jvm"); if (cjvm != null) jvm.addAll(cjvm);
+            List<Object> game = new ArrayList<>();
+            List<Object> pgame = Json.arr(pa, "game"); if (pgame != null) game.addAll(pgame);
+            List<Object> cgame = Json.arr(ca, "game"); if (cgame != null) game.addAll(cgame);
+            vj.put("arguments", Json.map("jvm", jvm, "game", game));
+        }
+
+        // 旧版（1.12 及以前）Forge 用 minecraftArguments，子版本优先
+        String legacy = Json.str(child, "minecraftArguments");
+        if (legacy != null) vj.put("minecraftArguments", legacy);
+
+        Map<String,Object> cjv = Json.obj(child, "javaVersion");
+        if (cjv != null) {
+            vj.put("javaVersion", cjv);
+            Number n = Json.num(cjv, "majorVersion");
+            if (n != null) r.javaVersionMajor = String.valueOf(n.intValue());
+        }
+
+        r.versionJson = vj;
+        r.versionId = childId == null ? r.versionId : childId;
+        // 客户端 jar 仍指向父版本，r.clientJar 保持不变
+    }
+
+    /** group:artifact（去掉版本号），用于库去重。 */
+    private static String groupArtifact(String name) {
+        if (name == null) return null;
+        String[] p = name.split(":");
+        return p.length >= 2 ? p[0] + ":" + p[1] : null;
+    }
+
+    private static String manifestUrlFor(Config cfg, String versionId) throws Exception {
+        for (VersionManager.VersionEntry e : VersionManager.fetchManifest(cfg.manifestUrl()))
+            if (e.id != null && e.id.equals(versionId)) return e.url;
+        throw new Exception("版本清单里找不到 " + versionId);
     }
 
     private static int countFiles(Path dir) {

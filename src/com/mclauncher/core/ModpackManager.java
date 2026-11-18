@@ -76,7 +76,7 @@ public class ModpackManager {
     /* ---------- 下载并安装 ---------- */
     public static InstalledPack install(Config cfg, SearchHit hit, PackVersion pv,
                                         Downloader.Listener l) throws Exception {
-        String instanceId = safeName(hit.title) + "_" + safeName(pv.name);
+        String instanceId = safeName(hit.title + "_" + pv.name);
         Path instanceDir = cfg.gameDir.resolve("instances").resolve(instanceId);
         Files.createDirectories(instanceDir);
 
@@ -130,8 +130,12 @@ public class ModpackManager {
         pack.mcVersion = Json.str(deps, "minecraft");
         String fabric = Json.str(deps, "fabric-loader");
         String quilt = Json.str(deps, "quilt-loader");
+        String forge = Json.str(deps, "forge");
+        String neoforge = Json.str(deps, "neoforge");
         if (fabric != null) { pack.loaderKind = ModLoaderManager.FABRIC; pack.loaderVersion = fabric; }
         else if (quilt != null) { pack.loaderKind = ModLoaderManager.QUILT; pack.loaderVersion = quilt; }
+        else if (neoforge != null) { pack.loaderKind = ModLoaderManager.NEOFORGE; pack.loaderVersion = neoforge; }
+        else if (forge != null) { pack.loaderKind = ModLoaderManager.FORGE; pack.loaderVersion = forge; }
         else { pack.loaderKind = null; pack.loaderVersion = null; }
 
         // 3. 下载各文件（mods 等），跳过仅服务端
@@ -144,6 +148,8 @@ public class ModpackManager {
             String rel = Json.str(f, "path");
             Path target = instanceDir.resolve(rel).normalize();
             if (!target.startsWith(instanceDir)) continue;
+            Map<String,Object> hashes = Json.obj(f, "hashes");
+            if (Files.exists(target) && hashes != null && !hashMatch(target, hashes)) Files.deleteIfExists(target);
             if (!Files.exists(target)) {
                 List<Object> downloads = Json.arr(f, "downloads");
                 l.status("正在下载 mod 文件 (" + (++done) + "/" + total + ")");
@@ -156,18 +162,57 @@ public class ModpackManager {
                     } catch (Exception e) { fl = e; }
                 }
                 if (fl != null) throw new Exception("mod 文件下载失败: " + rel + " " + fl.getMessage());
+                // mrpack 里给了 sha1 / sha512，下完必须核一次，坏文件当场重试而不是拖到启动才报错
+                if (hashes != null && !hashMatch(target, hashes)) {
+                    Files.deleteIfExists(target);
+                    throw new Exception("mod 文件校验失败（sha1/sha512 不符，可能被截断）：" + rel);
+                }
             }
         }
         Files.deleteIfExists(mrpack);
         return pack;
     }
 
+    /**
+     * 实例目录名：保留中英文与数字（中文整合包名不再被压成一串下划线），
+     * 去掉路径分隔符等非法字符，并附一段短哈希，避免「名字相近/同长度」的整合包互相覆盖。
+     */
     private static String safeName(String s) {
-        if (s == null) return "pack";
-        return s.replaceAll("[^a-zA-Z0-9._-]", "_");
+        if (s == null || s.isBlank()) return "pack";
+        String clean = s.replaceAll("[\\\\/:*?\"<>|\\s]+", "_").trim();
+        while (clean.startsWith(".") || clean.startsWith("_")) clean = clean.substring(1);
+        if (clean.isEmpty()) clean = "pack";
+        if (clean.length() > 48) clean = clean.substring(0, 48);
+        String hash = Integer.toHexString(s.hashCode() & 0x7fffffff);
+        return clean + "-" + hash;
     }
 
     private static String enc(String s) {
         return java.net.URLEncoder.encode(s, StandardCharsets.UTF_8);
+    }
+
+    /** 按 mrpack 里的 hashes 字段核对文件（sha1 优先，其次 sha512）。 */
+    private static boolean hashMatch(Path f, Map<String,Object> hashes) {
+        try {
+            String sha1 = Json.str(hashes, "sha1");
+            if (sha1 != null && !sha1.isEmpty()) return digest(f, "SHA-1").equalsIgnoreCase(sha1);
+            String sha512 = Json.str(hashes, "sha512");
+            if (sha512 != null && !sha512.isEmpty()) return digest(f, "SHA-512").equalsIgnoreCase(sha512);
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    private static String digest(Path f, String algo) throws Exception {
+        java.security.MessageDigest md = java.security.MessageDigest.getInstance(algo);
+        try (InputStream in = Files.newInputStream(f)) {
+            byte[] buf = new byte[65536];
+            int n;
+            while ((n = in.read(buf)) != -1) md.update(buf, 0, n);
+        }
+        StringBuilder sb = new StringBuilder();
+        for (byte b : md.digest()) sb.append(String.format("%02x", b));
+        return sb.toString();
     }
 }
