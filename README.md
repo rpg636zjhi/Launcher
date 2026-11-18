@@ -1,2 +1,42 @@
 # xyclauncher
-一个非常非常简洁的启动器如果在同一个局域网内多个设备使用可以p2p下载，并且支持多线程和多点下载
+一个非常非常简洁的我的世界启动器如果在同一个局域网内多个设备使用可以p2p下载，并且支持多线程和多点下载
+## 功能
+
+- **账号**
+  - 离线模式：输入任意名字，生成离线账号（单机/局域网/部分服务器）。
+  - 微软正版登录：设备码全链路（OAuth → Xbox Live → XSTS → Minecraft → 玩家档案），
+    自动保存 refreshToken，令牌过期自动刷新。
+  - 皮肤站外置登录：填写 Yggdrasil API（默认 LittleSkin）+ 账号密码即可；
+    启动时自动下载并注入 authlib-injector，支持 LittleSkin、Blessing Skin 等兼容站点。
+- **游戏版本下载**
+  - 「刷新版本列表」拉取全部版本（release / snapshot / old_beta / old_alpha）。
+  - 启动时自动下载：版本 JSON、客户端 jar、全部库文件（含 native 解压）、资源文件。
+  - 下载默认走 BMCLAPI 国内镜像，官方源→镜像逐文件回退；断点续传 + 8 轮重试 + 403 指数退避，
+    客户端大文件慢网也能下完；最终按 sha1 校验，不符自动重下。
+- **mod 加载器下载**（「Mod 加载器」分页）
+  - 支持 Fabric / Quilt：选择加载器版本后启动时自动下载加载器库并生成启动 profile。
+- **整合包下载**（「整合包」分页）
+  - 搜索 Modrinth 整合包（.mrpack），下载并解析索引，自动把 mods 与覆盖文件部署到
+    `.minecraft\instances\<包名>\` 独立实例目录，按整合包要求自动装对应 MC 版本与加载器。
+- **Java 自动检测与自动下载**
+  - 启动时读取版本 JSON 的 javaVersion 要求；本机有可用的 Java 则直接用，
+    否则自动下载微软 OpenJDK（aka.ms 官方直链，国内可达、支持断点续传）并解压。
+  - 「Java」下拉默认「Java 25（推荐）」——使用已预下载到 `.minecraft\runtime\jdk-25` 的
+    Microsoft OpenJDK 25（LTS）启动；也可改为「自动：使用最新版」「按游戏要求版本」或固定 Java 17。
+    本机已预下载 Java 25 运行时，开机即用、无需等待下载。
+- **启动参数完整支持**
+  - 完整解析版本 JSON 的 `arguments.jvm`（`--enable-native-access`、`--add-exports`、
+    `-Djava.library.path`、`-cp` 等 Java 25 必需项）与 `arguments.game`；
+  - 按规则（os/arch/features）精确启用参数：自定义分辨率自动传入宽高，
+    quick play / demo 等未启用功能参数不会被误传，杜绝「Only one quick play option」类崩溃。
+- **文件完整性校验**
+  - 「校验文件完整性」按钮：按版本 JSON 的 sha1 逐文件核对客户端 jar、全部库与资源，
+    缺失/损坏文件自动补下并返回修复数量。
+- **设置**
+  - 内存：512MB ~ 16GB；下载源：bmclapi 国内镜像 / mojang 官方；
+    窗口 960×640（可在源码 Config 调整）。
+
+## 已知说明
+
+- 微软正版登录需在浏览器输入设备码完成授权；若提示「未获取到 Minecraft 资料」，
+  说明该微软账号未购买 Java 版（可先用离线模式）。
