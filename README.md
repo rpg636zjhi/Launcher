@@ -6,7 +6,7 @@
 
 <p align="center">
   <a href="https://github.com/xyc-launcher/Launcher/releases/latest"><img src="https://img.shields.io/badge/%E4%B8%8B%E8%BD%BD-156%20KB-00A2E8?style=flat-square" alt="下载"></a>
-  <img src="https://img.shields.io/badge/QQ%E7%BE%A4-1109782064-12B7F5?style=flat-square&logo=tencentqq&logoColor=white" alt="QQ 群">
+  <a href="https://qun.qq.com/universal-share/share?ac=1&amp;authKey=VkmMgK6LsJL9zqtKh%2FujomMHt%2Bv%2FgR7Y6AdWhyBhJjAigxcMZLsQb2v3AZAxPkPi&amp;busi_data=eyJncm91cENvZGUiOiIxMTA5NzgyMDY0IiwidG9rZW4iOiI2UHBDQWl0Y2szYmtTTkFFeVduRW1EbzZFTnIyODNvZjZNM240ZFRnWGhPRm5QZll1OTFPZStSSFduOFd1SEhHIiwidWluIjoiMzgxMzg5ODQwMSJ9&amp;data=Wi_V6vYnQoUSBEQEnv2hJhbftiJF_Gp89-4q1E8_QfxkvWen8eVZCAFJzi2UCjmotBZmhSKPKGiN52jKEyu7kw&amp;svctype=4&amp;tempid=h5_group_info"><img src="https://img.shields.io/badge/QQ%E7%BE%A4-1109782064-12B7F5?style=flat-square&logo=tencentqq&logoColor=white" alt="QQ 群"></a>
   <a href="https://space.bilibili.com/168686520"><img src="https://img.shields.io/badge/Bilibili-%E8%87%AD%E8%87%AD%E7%9A%84%E7%B4%AB%E5%A4%96%E7%BA%BF%E7%81%AF-FB7299?style=flat-square&logo=bilibili&logoColor=white" alt="Bilibili"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-green?style=flat-square" alt="License: MIT"></a>
 </p>
