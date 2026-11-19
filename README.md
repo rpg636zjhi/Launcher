@@ -1,9 +1,18 @@
-# xyc Launcher
+<p align="center">
+  <img src="assets/icon.png" width="112" alt="xyc Launcher">
+</p>
 
-> **156 KB，一秒下完。** GitHub 再慢也拦不住——双击即用，Java 自动配。
+<h1 align="center">xyc Launcher</h1>
 
-一个极简的《我的世界》启动器：安装包只有 **0.15 MB**（HMCL 的 1/64），
-不捆 Java、不捆依赖，第一次打开自己去配需要的运行时。
+<p align="center">
+  <a href="https://github.com/xyc-launcher/Launcher/releases/latest"><img src="https://img.shields.io/badge/%E4%B8%8B%E8%BD%BD-156%20KB-00A2E8?style=flat-square" alt="下载"></a>
+  <img src="https://img.shields.io/badge/QQ%E7%BE%A4-1109782064-12B7F5?style=flat-square&logo=tencentqq&logoColor=white" alt="QQ 群">
+  <a href="https://space.bilibili.com/168686520"><img src="https://img.shields.io/badge/Bilibili-%E8%87%AD%E8%87%AD%E7%9A%84%E7%B4%AB%E5%A4%96%E7%BA%BF%E7%81%AF-FB7299?style=flat-square&logo=bilibili&logoColor=white" alt="Bilibili"></a>
+</p>
+
+<p align="center"><b>156 KB，一秒下完</b> —— GitHub 再慢也拦不住，双击即用，Java 自动配</p>
+
+一个极简的《我的世界》启动器：安装包只有 **0.15 MB**（HMCL 的 1/64），不捆 Java、不捆依赖，第一次打开自己去配需要的运行时。
 
 ## 下载
 
