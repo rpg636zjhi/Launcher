@@ -49,6 +49,13 @@ Get-FileHash xyc.Launcher.exe -Algorithm SHA256
 
 跟上面的值一致就是原版，不一致别运行。
 
+### 关于签名和版权
+
+exe 带 Authenticode 数字签名（SHA-256 / RSA，含 DigiCert 时间戳），证书 Subject 是 `_xycwww_`，有效期到 2036 年。文件属性里能看到版本信息：`xyc Launcher 1.0.0.0`、`© _xycwww_`。
+
+这张证书是**自签名**的，没有经过 CA 签发，所以 Windows 第一次运行会弹「未知发布者」。这不是文件有问题，只是没有第三方为身份背书——要消掉这个提示只能买代码签名证书（OV/EV，一年几百到几千）。
+
+
 ## 功能
 
 - **账号**
