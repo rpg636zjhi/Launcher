@@ -1,8 +1,0 @@
-﻿�ҵ��汾 26.3 url=https://piston-meta.mojang.com/v1/packages/5df1795e16eea19d75b923d66ecca9ce183353c5/26.3.json
-[״̬] �������ذ汾��Ϣ��
-[״̬] ����������Ϸ�ͻ��ˡ�
-=== ����ʧ�ܣ������쳣 ===
-java.lang.Exception: ��������Դ��ʧ��: https://piston-data.mojang.com/v1/objects/e877b6a07acd633fb3bb475002175cec036e7b87/client.jar (Remote host terminated the handshake)
-	at com.mclauncher.core.Downloader.downloadAny(Downloader.java:151)
-	at com.mclauncher.core.Downloader.install(Downloader.java:71)
-	at DlTest.main(DlTest.java:20)

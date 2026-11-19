@@ -1,0 +1,11 @@
+# 编译产物
+out/
+*.class
+*.jar.new
+
+# 运行与调试残留
+_dltest/
+_launch_log.txt
+_diag_run.txt
+_args.txt
+*.log
