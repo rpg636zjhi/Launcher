@@ -8,7 +8,7 @@
   <a href="https://github.com/xyc-launcher/Launcher/releases/latest"><img src="https://img.shields.io/badge/%E4%B8%8B%E8%BD%BD-156%20KB-00A2E8?style=flat-square" alt="下载"></a>
   <img src="https://img.shields.io/badge/QQ%E7%BE%A4-1109782064-12B7F5?style=flat-square&logo=tencentqq&logoColor=white" alt="QQ 群">
   <a href="https://space.bilibili.com/168686520"><img src="https://img.shields.io/badge/Bilibili-%E8%87%AD%E8%87%AD%E7%9A%84%E7%B4%AB%E5%A4%96%E7%BA%BF%E7%81%AF-FB7299?style=flat-square&logo=bilibili&logoColor=white" alt="Bilibili"></a>
-  <a href="LICENSE"><img src="https://img.shields.io/badge/License-GPL--3.0-blue?style=flat-square" alt="License: GPL-3.0"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-green?style=flat-square" alt="License: MIT"></a>
 </p>
 
 <p align="center"><b>156 KB，一秒下完</b> —— GitHub 再慢也拦不住，双击即用，Java 自动配</p>
@@ -71,15 +71,14 @@
 
 ## 许可
 
-本项目以 **GNU General Public License v3.0** 发布，完整条款见 [LICENSE](LICENSE)。
+本项目以 **MIT License** 发布，完整条款见 [LICENSE](LICENSE)。
 
 Copyright (C) 2026 xycwww2025
 
-- 可以自由使用、修改、再分发，包括商业用途
-- 分发修改版时，必须同样以 GPL-3.0 开源，并提供对应源码
-- 必须保留版权声明，不提供任何担保
+- 可以自由使用、修改、再分发，包括商业用途，也可闭源使用
+- 只需要保留版权声明和许可声明
+- 不提供任何担保
 
-> ⚠️ **GPL-3.0 对你有额外的一层要求**：分发二进制（Release 里的 exe）时，必须一并提供
-> 「用于构建该二进制的完整源码」。目前 Release 的 exe 由一份**没有进仓库**的源码构建
-> （仓库里那份少了 P2P / 镜像 / 并发下载三个类），严格来说这不符合 GPL-3.0 第 6 条。
-> 补齐方式：把构建发布包的那份源码也提交到仓库，或让 Release 改用仓库源码编译。
+选用 MIT 的考虑：MIT 不要求「分发二进制时提供对应源码」，
+所以现在 Release 的 exe 和仓库源码不完全一致，不构成违约；
+代价是别人可以拿这套代码做闭源商业版，且没有义务回馈。
