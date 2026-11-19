@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://cdn.jsdelivr.net/gh/xyc-launcher/Launcher@main/assets/icon.png" width="112" alt="xyc Launcher">
+  <img src="https://avatars.githubusercontent.com/u/358580527?v=4" width="112" alt="xyc Launcher">
 </p>
 
 <h1 align="center">xyc Launcher</h1>
