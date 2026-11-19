@@ -1,7 +1,23 @@
-# xyclauncher
--**注意**
-本产品需要Java8以上的Java才能启动
- ## 功能
+# xyc Launcher
+
+> **156 KB，一秒下完。** GitHub 再慢也拦不住——双击即用，Java 自动配。
+
+一个极简的《我的世界》启动器：安装包只有 **0.15 MB**（HMCL 的 1/64），
+不捆 Java、不捆依赖，第一次打开自己去配需要的运行时。
+
+## 下载
+
+| 版本 | 体积 | 下载 |
+|---|---|---|
+| 64 位（推荐） | 156 KB | [xyc.Launcher.exe](https://github.com/xyc-launcher/Launcher/releases/download/Launcher/xyc.Launcher.exe) |
+| 32 位 | 156 KB | [xyc.Launcher.32bit.exe](https://github.com/xyc-launcher/Launcher/releases/download/Launcher/xyc.Launcher.32bit.exe) |
+
+- **系统**：Windows + .NET Framework 4.x（Win10 / Win11 自带，无需另装）
+- **Java**：不用手动装。启动器会依次在 `JAVA_HOME`、注册表、`.minecraft\runtime`、
+  `PATH` 里找，找不到就自动下载对应版本并解压
+- **配置**：双击即开，设置写在 exe 同目录的 `config.json`
+
+## 功能
 
 - **账号**
   - 一个非常非常简洁的我的世界启动器如果在同一个局域网内多个设备使用可以p2p下载，并且支持多线程和多点下载
@@ -16,16 +32,16 @@
   - 下载默认走 BMCLAPI 国内镜像，官方源→镜像逐文件回退；断点续传 + 8 轮重试 + 403 指数退避，
     客户端大文件慢网也能下完；最终按 sha1 校验，不符自动重下。
 - **mod 加载器下载**（「Mod 加载器」分页）
-  - 支持 Fabric / Quilt：选择加载器版本后启动时自动下载加载器库并生成启动 profile。
+  - 支持 **Fabric / Quilt / Forge / NeoForge**：选择加载器版本后启动时自动下载加载器库
+    并生成启动 profile；Forge / NeoForge 会自动下载官方 installer 并静默安装。
 - **整合包下载**（「整合包」分页）
   - 搜索 Modrinth 整合包（.mrpack），下载并解析索引，自动把 mods 与覆盖文件部署到
     `.minecraft\instances\<包名>\` 独立实例目录，按整合包要求自动装对应 MC 版本与加载器。
 - **Java 自动检测与自动下载**
   - 启动时读取版本 JSON 的 javaVersion 要求；本机有可用的 Java 则直接用，
     否则自动下载微软 OpenJDK（aka.ms 官方直链，国内可达、支持断点续传）并解压。
-  - 「Java」下拉默认「Java 25（推荐）」——使用已预下载到 `.minecraft\runtime\jdk-25` 的
-    Microsoft OpenJDK 25（LTS）启动；也可改为「自动：使用最新版」「按游戏要求版本」或固定 Java 17。
-    本机已预下载 Java 25 运行时，开机即用、无需等待下载。
+  - 「Java」下拉默认「自动：按游戏版本要求（推荐）」——按版本 JSON 的 javaVersion 选最合适的运行时，
+    没有就下载；也可选「自动：使用最新版」「固定 Java 17」「固定 Java 21」。
 - **启动参数完整支持**
   - 完整解析版本 JSON 的 `arguments.jvm`（`--enable-native-access`、`--add-exports`、
     `-Djava.library.path`、`-cp` 等 Java 25 必需项）与 `arguments.game`；
