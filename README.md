@@ -17,8 +17,7 @@
 
 <h2 align="center">在公共 Wi-Fi、网吧、公司网络里别开着 P2P</h2>
 
-<p align="center"><b>那等于把游戏目录挂在局域网里给人看，同一网段谁都能取走里面的日志和存档。<br>
-用不着就把 <code>config.json</code> 里的 <code>p2pEnabled</code> 改成 <code>false</code>，回自己家网络再打开。</b></p>
+<p align="center"><b>那等于把游戏目录挂在局域网里给人看，同一网段谁都能取走里面的日志和存档。</b></p>
 
 ## 下载
 
