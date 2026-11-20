@@ -55,6 +55,18 @@ exe 带 Authenticode 数字签名（SHA-256 / RSA，含 DigiCert 时间戳），
 
 这张证书是**自签名**的，没有经过 CA 签发，所以 Windows 第一次运行会弹「未知发布者」。这不是文件有问题，只是没有第三方为身份背书——要消掉这个提示只能买代码签名证书（OV/EV，一年几百到几千）。
 
+### 发布包拆解
+
+Release 里的 exe 是「.NET 外壳 + 内嵌 jar」两层结构，拆出来的东西都在 [unpacked/](unpacked/) 里：
+
+- `xyc_embedded.jar`：从 exe 原样取出的 jar，125,473 字节，44 个 class
+- `classes/`：同一个 jar 展开后的内容，可以直接反编译看
+- `shell/pe-info.txt`：PE 结构、版本资源、外壳方法名和字符串常量
+- `shell/xyc.Launcher.cer`：签名证书（DER）
+- `extract.py`：复现脚本，拿原版 exe 自己跑一遍就能得到上面这些
+
+两个 exe（64 位 / 32 位）里的 jar 逐字节相同，只有外壳不一样。
+
 
 ## 功能
 
@@ -105,7 +117,7 @@ exe 带 Authenticode 数字签名（SHA-256 / RSA，含 DigiCert 时间戳），
 - **Forge / NeoForge 靠官方 installer 安装**：国内网络偶尔超时，重试一次通常就好。
 - **整合包只认 `.mrpack`**：CurseForge 的 zip 格式需要先转换。
 - **加载器版本列表走国内镜像**：镜像没同步时会缺版本，换下载源或稍后刷新。
-- **P2P 分发没有开源**：局域网多设备互传只在 Release 的 exe 里，自己编译源码会少这一块，属于预期行为。
+- **P2P 只有字节码，没有源码**：`unpacked/classes/` 里能翻到 `P2PNode` 那 4 个 class，反编译可以看结构，但仓库不含它的 `.java`；自己编译源码得到的版本会少这一块，属于预期行为。
 
 ## 安全提示
 
