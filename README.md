@@ -5,15 +5,15 @@
 <h1 align="center">xyc Launcher</h1>
 
 <p align="center">
-  <a href="https://github.com/xyc-launcher/Launcher/releases/latest"><img src="https://img.shields.io/badge/%E4%B8%8B%E8%BD%BD-164%20KB-00A2E8?style=flat-square" alt="下载"></a>
+  <a href="https://github.com/xyc-launcher/Launcher/releases/latest"><img src="https://img.shields.io/badge/%E4%B8%8B%E8%BD%BD-184%20KB-00A2E8?style=flat-square" alt="下载"></a>
   <a href="https://qun.qq.com/universal-share/share?ac=1&amp;authKey=VkmMgK6LsJL9zqtKh%2FujomMHt%2Bv%2FgR7Y6AdWhyBhJjAigxcMZLsQb2v3AZAxPkPi&amp;busi_data=eyJncm91cENvZGUiOiIxMTA5NzgyMDY0IiwidG9rZW4iOiI2UHBDQWl0Y2szYmtTTkFFeVduRW1EbzZFTnIyODNvZjZNM240ZFRnWGhPRm5QZll1OTFPZStSSFduOFd1SEhHIiwidWluIjoiMzgxMzg5ODQwMSJ9&amp;data=Wi_V6vYnQoUSBEQEnv2hJhbftiJF_Gp89-4q1E8_QfxkvWen8eVZCAFJzi2UCjmotBZmhSKPKGiN52jKEyu7kw&amp;svctype=4&amp;tempid=h5_group_info"><img src="https://img.shields.io/badge/QQ%E7%BE%A4-1109782064-12B7F5?style=flat-square&logo=tencentqq&logoColor=white" alt="QQ 群"></a>
   <a href="https://space.bilibili.com/168686520"><img src="https://img.shields.io/badge/Bilibili-%E8%87%AD%E8%87%AD%E7%9A%84%E7%B4%AB%E5%A4%96%E7%BA%BF%E7%81%AF-FB7299?style=flat-square&logo=bilibili&logoColor=white" alt="Bilibili"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-green?style=flat-square" alt="License: MIT"></a>
 </p>
 
-<p align="center"><b>164 KB，一秒下完</b> —— GitHub 再慢也拦不住，双击即用，Java 自动配</p>
+<p align="center"><b>184 KB，一秒下完</b> —— GitHub 再慢也拦不住，双击即用，Java 自动配</p>
 
-一个极简的《我的世界》启动器：安装包只有 **0.16 MB**（不到 HMCL 的 1/60），不捆 Java、不捆依赖，第一次打开自己去配需要的运行时。
+一个极简的《我的世界》启动器：安装包只有 **0.18 MB**（不到 HMCL 的 1/50），不捆 Java、不捆依赖，第一次打开自己去配需要的运行时。
 
 <h2 align="center">在公共 Wi-Fi、网吧、公司网络里别开着 P2P</h2>
 
@@ -23,8 +23,8 @@
 
 | 版本 | 体积 | 下载 |
 |---|---|---|
-| 64 位（推荐） | 164 KB | [xyc.Launcher.exe](https://github.com/xyc-launcher/Launcher/releases/download/Launcher/xyc.Launcher.exe) |
-| 32 位 | 164 KB | [xyc.Launcher.32bit.exe](https://github.com/xyc-launcher/Launcher/releases/download/Launcher/xyc.Launcher.32bit.exe) |
+| 64 位（推荐） | 184 KB | [xyc.Launcher1.0.1.exe](https://github.com/xyc-launcher/Launcher/releases/download/Launcher/xyc.Launcher1.0.1.exe) |
+| 32 位 | 184 KB | [xyc.Launcher.32bit1.0.1.exe](https://github.com/xyc-launcher/Launcher/releases/download/Launcher/xyc.Launcher.32bit1.0.1.exe) |
 
 
 - **系统**：Windows + .NET Framework 4.x（Win10 / Win11 自带，无需另装）
@@ -34,28 +34,28 @@
 
 ### 校验下载文件
 
-两个文件都是 167,504 字节，下载后可以核对哈希，确认没被动过：
+两个文件都是 187,984 字节，下载后可以核对哈希，确认没被动过：
 
 | 文件 | SHA-256 |
 |---|---|
-| `xyc.Launcher.exe` | `d99df7554b72bd4ca47348cf27258f7332c2b2de1460c70b9852425eb1271b5a` |
-| `xyc.Launcher.32bit.exe` | `041495d141d444f1369d4a8b4d9a3b5a638afb61e1548a511e5b61a1c3b07a23` |
+| `xyc.Launcher1.0.1.exe` | `e7477d2eaa6458cd6c2268aad4319e3cb2eb70e99e659a3a65f56944bcc8fa6a` |
+| `xyc.Launcher.32bit1.0.1.exe` | `ff6df2bcb121b1db18f676231295045db9dfce6ef3023fe7b05e1bb61c1a70e4` |
 
 Windows 上核对（命令行或 PowerShell 任选）：
 
 ```bat
-certutil -hashfile xyc.Launcher.exe SHA256
+certutil -hashfile xyc.Launcher1.0.1.exe SHA256
 ```
 
 ```powershell
-Get-FileHash xyc.Launcher.exe -Algorithm SHA256
+Get-FileHash xyc.Launcher1.0.1.exe -Algorithm SHA256
 ```
 
 跟上面的值一致就是原版，不一致别运行。
 
 ### 关于签名和版权
 
-exe 带 Authenticode 数字签名（SHA-256 / RSA，含 DigiCert 时间戳），证书 Subject 是 `_xycwww_`，有效期到 2036 年。文件属性里能看到版本信息：`xyc Launcher 1.0.0.0`、`© _xycwww_`。
+exe 带 Authenticode 数字签名（SHA-256 / RSA，含 DigiCert 时间戳），证书 Subject 是 `_xycwww_`，有效期到 2036 年。文件属性里能看到版本信息：`xyc Launcher 1.0.1.0`、`© _xycwww_`。
 
 这张证书是**自签名**的，没有经过 CA 签发，所以 Windows 第一次运行会弹「未知发布者」。这不是文件有问题，只是没有第三方为身份背书——要消掉这个提示只能买代码签名证书（OV/EV，一年几百到几千）。
 
@@ -114,6 +114,12 @@ Release 里的 exe 是「.NET 外壳 + 内嵌 jar」两层结构，拆出来的�
 - **文件完整性校验**
   - 「校验文件完整性」按钮：按版本 JSON 的 sha1 逐文件核对客户端 jar、全部库与资源，
     缺失/损坏文件自动补下并返回修复数量。
+- **自动更新**
+  - 启动时查 GitHub 最新 Release（认 `config.json` 里的 `githubRepo` 或 `updateUrl`），
+    拿到新包先比大小再比 sha256，对得上才换。
+  - 替换走一个临时批处理：旧 exe 改名备份 → 拷新文件 → 成功删备份，失败自动回滚，
+    下次打开会提示上次没更成功。
+  - 国内直连慢时先试 `gh-proxy.com` / `ghproxy.net` 镜像，再回原地址。
 - **设置**
   - 内存：512MB ~ 16GB；下载源：bmclapi 国内镜像 / mojang 官方；
     窗口 960×640（可在源码 Config 调整）。
@@ -121,7 +127,9 @@ Release 里的 exe 是「.NET 外壳 + 内嵌 jar」两层结构，拆出来的�
 ## 已知问题
 
 - **只有 Windows 版**：Mac 和 Linux 用不了。
-- **没有自动更新**：出了新版本要自己重新下载替换，启动器不会提示。
+- **自动更新第一次要手动填一次源**：点右下「检查更新」会弹框让你填 `xyc-launcher/Launcher`，
+  填一次就记进 `config.json`，之后启动自动查。不填的话自动检查直接跳过，等于没更新。
+- **自动更新可能被 GitHub 限流**：同一 IP 每小时只给 60 次 API 请求，报错就过一会儿再点。
 - **微软登录要输设备码**：得跳浏览器手动输入一次性码，比网页回调多一步。
 - **提示「未获取到 Minecraft 资料」**：说明这个微软账号没买 Java 版，先用离线模式就是了。
 - **首次启动要下 Java**：几十 MB，网速慢的时候会停在下载阶段，等它跑完就行。
@@ -144,8 +152,9 @@ Release 里的 exe 是「.NET 外壳 + 内嵌 jar」两层结构，拆出来的�
 - 登录令牌在新版里是加密存放的，密钥单独一个文件，所以**整个启动器文件夹都别直接发出去**。
 - 别接收别人发来的 `config.json`，也不要拿别人的配置文件覆盖自己的，用启动器自己生成的那份。
 - **在公共 Wi-Fi、网吧、公司网络里别开着 P2P**：那等于把游戏目录挂在局域网里给人看。
-  用不着就把 `config.json` 里的 `p2pEnabled` 改成 `false`，回自己家路由器下再打开。
 - 版本和加载器尽量从官方或 BMCLAPI 下，别为了快随手切到不认识的镜像。
+- 1.0.1 起 HTTPS 会在 Java 自带证书校验失败时回落到 **Windows 根证书库**，
+  装过企业代理/抓包工具根证书的机器，那些连接也会被当成可信，介意就自己留意。
 
 ## 许可
 

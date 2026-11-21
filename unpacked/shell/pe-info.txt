@@ -1,17 +1,17 @@
 xyc Launcher —— Release exe 外壳结构记录
-源文件：xyc.Launcher.exe（167,504 字节，SHA-256 d99df7554b72bd4ca47348cf27258f7332c2b2de1460c70b9852425eb1271b5a）
-    与 xyc.Launcher.32bit.exe（167,504 字节，SHA-256 041495d141d444f1369d4a8b4d9a3b5a638afb61e1548a511e5b61a1c3b07a23）
+源文件：xyc.Launcher1.0.1.exe（187,984 字节，SHA-256 e7477d2eaa6458cd6c2268aad4319e3cb2eb70e99e659a3a65f56944bcc8fa6a）
+    与 xyc.Launcher.32bit1.0.1.exe（187,984 字节，SHA-256 ff6df2bcb121b1db18f676231295045db9dfce6ef3023fe7b05e1bb61c1a70e4）
     内嵌 jar 逐字节相同，只有外壳有差异。
 
 一、PE 结构
   机器类型      0x014c（PE32，32 位 x86）
   子系统        2（Windows GUI）
   节表
-    .text    raw 140,800   vaddr 0x2000
-    .rsrc    raw  18,432   vaddr 0x26000
-    .reloc   raw     512   vaddr 0x2c000
-  内嵌 jar        起始偏移 6,652，长度 125,473 字节
-                 SHA-256 3ef7334e1d609ff9a6a1ed35bf127f29db4f1bb3314af9ce04341ff6aee293bf
+    .text    raw 161,280   vaddr 0x2000
+    .rsrc    raw  18,432   vaddr 0x2a000
+    .reloc   raw     512   vaddr 0x30000
+  内嵌 jar        起始偏移 6,748，长度 145,672 字节
+                 SHA-256 bfb805c084ce5c7afa61033a432970ceb5380b62a331f2e524ac440e0fd7cf78
   数字签名        IMAGE_DIRECTORY_ENTRY_SECURITY 存在，7,248 字节
                  WIN_CERTIFICATE，wRevision=0x0200，wCertificateType=0x0002（PKCS#7）
 
@@ -36,9 +36,9 @@ xyc Launcher —— Release exe 外壳结构记录
   版本 资源（文件属性里能看到）
     CompanyName      _xycwww_
     FileDescription  xyc Launcher - Minecraft Java 版启动器
-    FileVersion      1.0.0.0
+    FileVersion      1.0.1.0
     ProductName      xyc Launcher
-    ProductVersion   1.0.0.0
+    ProductVersion   1.0.1.0
     LegalCopyright   © _xycwww_
     OriginalFilename xyc Launcher.exe
     InternalName     xyc Launcher
@@ -66,6 +66,8 @@ xyc Launcher —— Release exe 外壳结构记录
     jdk|jre|java|temurin|adoptium|zulu|corretto|graal|semeru|dragonwell|openjdk|bellsoft|liberica
 
 四、签名证书（shell/xyc.Launcher.cer，DER 格式，7,240 字节）
+  DER 的 SHA-256  2f844073549ca4bc7ea23935212110ca0423857bbfffaa76b4841a4036aa05dd
+  （签名证书本身不变，序列号和有效期一致；哈希会变是因为签名时的 DigiCert 时间戳每次不同）
   Subject  OU = xyc Launcher, O = _xycwww_, CN = _xycwww_
   Issuer   OU = xyc Launcher, O = _xycwww_, CN = _xycwww_
   算法     sha256WithRSAEncryption
