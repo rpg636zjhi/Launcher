@@ -41,16 +41,6 @@
 | `xyc.Launcher1.0.1.exe` | `e7477d2eaa6458cd6c2268aad4319e3cb2eb70e99e659a3a65f56944bcc8fa6a` |
 | `xyc.Launcher.32bit1.0.1.exe` | `ff6df2bcb121b1db18f676231295045db9dfce6ef3023fe7b05e1bb61c1a70e4` |
 
-Windows 上核对（命令行或 PowerShell 任选）：
-
-```bat
-certutil -hashfile xyc.Launcher1.0.1.exe SHA256
-```
-
-```powershell
-Get-FileHash xyc.Launcher1.0.1.exe -Algorithm SHA256
-```
-
 跟上面的值一致就是原版，不一致别运行。
 
 ### 关于签名和版权
