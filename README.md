@@ -43,7 +43,7 @@ chmod +x run.sh
 
 > **启动器自身要求 Java 17 或更高**（jar 是 Java 17 字节码）；本地若只有 Java 8/11，脚本会自动跳过并下载 JRE 21。
 >
-> **游戏本体所需的 Java 由启动器按游戏版本自动单独准备**（老版本精确匹配 Java 8，新版用 17/21），与跑界面的 Java 互不干扰——即使你用 Java 21 跑启动器，也照样能启动需要 Java 8 的老版本游戏。想手动指定跑界面的 Java，设 `JAVA_HOME` 或 `XYC_JAVA` 即可。
+> **游戏本体所需的 Java 由启动器按游戏版本自动单独准备**（老版本精确匹配 Java 8，新版用 17/21），与跑界面的 Java 互不干扰。即使你用 Java 21 跑启动器，也照样能启动需要 Java 8 的老版本游戏。想手动指定跑界面的 Java，设 `JAVA_HOME` 或 `XYC_JAVA` 即可。
 
 ## 校验与签名（Windows）
 
@@ -108,7 +108,7 @@ JBR_HOME=/path/to/jbr ./run.sh
 
 ### 为什么需要 JBR
 
-原生 Wayland 工具包（`WLToolkit`）目前**只在 JetBrains Runtime 里提供**，标准 OpenJDK / Temurin / 微软 OpenJDK 都没有——普通 Java 在 Wayland 下只能走 XWayland 兼容层（高分屏模糊、窗口集成差）。JBR 由 JetBrains 发布、基于 OpenJDK 21、可自由使用。
+原生 Wayland 工具包（`WLToolkit`）目前**只在 JetBrains Runtime 里提供**，标准 OpenJDK / Temurin / 微软 OpenJDK 都没有。普通 Java 在 Wayland 下只能走 XWayland 兼容层（高分屏模糊、窗口集成差）。JBR 由 JetBrains 发布、基于 OpenJDK 21、可自由使用。
 
 > 已知限制（JBR 的 WLToolkit 实验性部分）：原生窗口标题栏/decoration、拖放、部分输入法尚不完善；对本启动器的标准 Swing 界面无影响。若遇到兼容问题，`XYC_UI=x11 ./run.sh` 即可走 XWayland 回退。
 
