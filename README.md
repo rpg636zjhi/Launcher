@@ -1,10 +1,12 @@
 # xyc Launcher
 
-一个极简的 Minecraft Java 版启动器。安装包 184 KB，不捆 Java、不捆依赖，双击即用；第一次打开会按游戏版本要求自己配好运行时。
+一个极简、绿色便携的 Minecraft Java 版启动器。**Windows 和 Linux 都能用**，核心是跨平台的 Java/Swing 程序，按游戏版本要求自动配好运行时。
 
-仅支持 Minecraft: Java Edition（Windows）
+仅支持 Minecraft: Java Edition。
 
-## 下载
+## 下载与运行
+
+### Windows
 
 | 版本 | 体积 | 文件 |
 | --- | --- | --- |
@@ -15,9 +17,37 @@
 - Java：不用手动装。依次在 `JAVA_HOME`、注册表、`.minecraft\runtime`、`PATH` 里找，找不到就自动下载对应版本并解压
 - 配置：双击即开，设置写在 exe 同目录的 `config.json`
 
-## 校验与签名
+### Linux
 
-两个文件都是 187,984 字节（即表中的 184 KB）。下载后可核对哈希：
+绿色便携，把整个文件夹放到任意位置即可运行，配置写在同目录的 `config.json`，不写系统目录、不改 PATH。
+
+```bash
+# 1. 解压/下载后进入目录
+cd xyc-launcher-linux
+
+# 2. 赋予执行权限（仅首次）
+chmod +x run.sh
+
+# 3. 启动
+./run.sh
+```
+
+`run.sh` 会**先检测系统里已经安装的 Java，有就直接用，绝不重复下载**。检测顺序：
+
+1. 内置运行时 `.minecraft/runtime/` 下的 `jdk-*/bin/java`
+2. 环境变量 `JAVA_HOME`
+3. `PATH` 里的 `java`
+4. 常见目录 `/usr/lib/jvm`、`/opt/java`、`/usr/java`、`~/.sdkman/candidates/java` 等
+
+**只有上面全部找不到时**，才会按需自动下载 **Temurin JRE 21**（约 45MB）到 `.minecraft/runtime/`。也就是说：系统里只要装了 Java，就什么都不用装、也不会下载任何东西；终端会打印「使用本地已安装的 Java（未下载任何东西）」。
+
+> **启动器自身要求 Java 17 或更高**（jar 是 Java 17 字节码）；本地若只有 Java 8/11，脚本会自动跳过并下载 JRE 21。
+>
+> **游戏本体所需的 Java 由启动器按游戏版本自动单独准备**（老版本精确匹配 Java 8，新版用 17/21），与跑界面的 Java 互不干扰。即使你用 Java 21 跑启动器，也照样能启动需要 Java 8 的老版本游戏。想手动指定跑界面的 Java，设 `JAVA_HOME` 或 `XYC_JAVA` 即可。
+
+## 校验与签名（Windows）
+
+两个 exe 都是 187,984 字节（即表中的 184 KB）。下载后可核对哈希：
 
 | 文件 | SHA-256 |
 | --- | --- |
@@ -42,6 +72,59 @@ Release 里的 exe 是「.NET 外壳 + 内嵌 jar」两层，拆出来的东西�
 
 两个 exe（64 / 32 位）里的 jar 逐字节相同，只有外壳不一样。
 
+## Linux 图形模式（X11 / Wayland）
+
+`run.sh` 会**自动识别当前图形会话，并优先复用本地已有 Java，不会为了 Wayland 而强制下载**：
+
+| 会话 | 本地 Java 情况 | 行为 |
+| --- | --- | --- |
+| Wayland | 本地 Java 就是 JBR（含 `libawt_wlawt.so`） | 直接复用，**原生 Wayland**，不下载 |
+| Wayland | 本地是普通 Java（OpenJDK/Temurin…） | 直接用它走 **XWayland**，**不下载** |
+| Wayland | 完全没有 Java | 才自动下载 JBR21 走原生 |
+| X11 | 有本地 Java | 直接用它走原生 X11，不下载 |
+
+也就是说：**默认不会因为 Wayland 就下载 95MB 的 JBR**。终端会明确告诉你用的是本地 Java 还是原生 Wayland；如果本地 Java 不是 JBR，会提示「本地 Java 不含 WLToolkit，在 Wayland 下通过 XWayland 运行」。
+
+**想要原生 Wayland** 时有两种方式，按需选择：
+
+```bash
+# 方式 A：想原生，但允许自动下载 JBR（仅在本地 Java 不支持时下载一次到 .jbr/）
+XYC_FORCE_NATIVE_WAYLAND=1 ./run.sh
+
+# 方式 B：自己已有 JBR，直接指定（完全不下载）
+JBR_HOME=/path/to/jbr ./run.sh
+# 或把 JBR 解压到启动器目录的 .jbr/ 文件夹，脚本自动识别
+```
+
+### 强制图形模式
+
+| 命令 | 效果 |
+| --- | --- |
+| `./run.sh` | 自动：优先用本地 Java；本地是 JBR 才走原生 Wayland，否则 X11/XWayland，**均不下载** |
+| `XYC_FORCE_NATIVE_WAYLAND=1 ./run.sh` | Wayland 下强制原生：本地 Java 不支持时自动下载 JBR |
+| `XYC_UI=wayland ./run.sh` | 强制原生 Wayland（没有 JBR 会自动下载） |
+| `XYC_UI=x11 ./run.sh` | 强制 X11 / XWayland（用本地 Java） |
+| `XYC_VULKAN=1 XYC_UI=wayland ./run.sh` | 原生 Wayland + Vulkan 硬件渲染（需显卡驱动支持） |
+
+### 为什么需要 JBR
+
+原生 Wayland 工具包（`WLToolkit`）目前**只在 JetBrains Runtime 里提供**，标准 OpenJDK / Temurin / 微软 OpenJDK 都没有。普通 Java 在 Wayland 下只能走 XWayland 兼容层（高分屏模糊、窗口集成差）。JBR 由 JetBrains 发布、基于 OpenJDK 21、可自由使用。
+
+> 已知限制（JBR 的 WLToolkit 实验性部分）：原生窗口标题栏/decoration、拖放、部分输入法尚不完善；对本启动器的标准 Swing 界面无影响。若遇到兼容问题，`XYC_UI=x11 ./run.sh` 即可走 XWayland 回退。
+
+### 诊断与桌面集成
+
+```bash
+# Wayland 原生支持诊断
+chmod +x wayland-check.sh
+./wayland-check.sh
+
+# 注册到应用菜单 / 桌面（可选）
+./install-desktop.sh
+```
+
+图形界面直接双击：在文件管理器里右键 `run.sh` → 属性 → 权限 → 勾选「允许作为程序执行」，之后双击即可；或在「打开方式」里选终端运行。
+
 ## 功能
 
 ### 游戏版本下载
@@ -56,13 +139,13 @@ Release 里的 exe 是「.NET 外壳 + 内嵌 jar」两层，拆出来的东西�
 
 ### 整合包
 
-搜索 Modrinth 整合包（`.mrpack`），下载并解析索引，自动把 mods 与覆盖文件部署到 `.minecraft\instances\<包名>\` 独立实例目录，按整合包要求自动装对应 MC 版本与加载器。
+搜索 Modrinth 整合包（`.mrpack`），下载并解析索引，自动把 mods 与覆盖文件部署到 `.minecraft/instances/<包名>`（Windows 为 `.minecraft\instances\<包名>\`）独立实例目录，按整合包要求自动装对应 MC 版本与加载器。
 
 ### Java 自动检测与下载
 
-启动时读取版本 JSON 的 `javaVersion` 要求；本机有可用的 Java 就直接用，否则自动下载微软 OpenJDK（aka.ms 官方直链，支持断点续传）并解压。
+启动时读取版本 JSON 的 `javaVersion` 要求；本机有可用的 Java 就直接用，否则自动下载对应版本并解压。Windows 下从 `JAVA_HOME`、注册表、`.minecraft\runtime`、`PATH` 里找；Linux 下从内置运行时、`JAVA_HOME`、`PATH` 及常见 JVM 目录里找。
 
-「Java」下拉默认「自动：按游戏版本要求（推荐）」，也可选「自动：使用最新版」「固定 Java 17」「固定 Java 21」。
+老版本精确匹配 Java 8（统一走 Adoptium），新版用 17/21。「Java」下拉默认「自动：按游戏版本要求（推荐）」，也可选「自动：使用最新版」「固定 Java 17」「固定 Java 21」。
 
 ### 启动参数
 
@@ -77,6 +160,14 @@ Release 里的 exe 是「.NET 外壳 + 内嵌 jar」两层，拆出来的东西�
 - 离线模式：输入任意名字，生成离线账号（单机 / 局域网 / 部分服务器）。
 - 微软正版登录：设备码全链路（OAuth → Xbox Live → XSTS → Minecraft → 玩家档案），自动保存 `refreshToken`，令牌过期自动刷新。
 - 皮肤站外置登录：填写 Yggdrasil API（默认 LittleSkin）+ 账号密码；启动时自动下载并注入 `authlib-injector`，支持 LittleSkin、Blessing Skin 等兼容站点。
+
+### 设置
+
+内存 512MB ~ 16GB；下载源 bmclapi 国内镜像 / mojang 官方；窗口 960×640（可在源码 Config 调整）。
+
+## Windows 专有功能
+
+以下功能由 Windows 外壳 / 独立模块提供，Linux 开源版不含：
 
 ### 自动更新
 
@@ -94,22 +185,64 @@ Release 里的 exe 是「.NET 外壳 + 内嵌 jar」两层，拆出来的东西�
 
 不需要这功能就把 `config.json` 里的 `p2pEnabled` 改成 `false`。公共网络请勿开启，原因见「安全提示」。
 
-### 设置
+### 证书回落
 
-内存 512MB ~ 16GB；下载源 bmclapi 国内镜像 / mojang 官方；窗口 960×640（可在源码 Config 调整）。
+1.0.1 起 HTTPS 会在 Java 自带证书校验失败时回落到 Windows 根证书库。装过企业代理 / 抓包工具根证书的机器，那些连接也会被当成可信，介意就自己留意。
 
-## 已知问题
+## Linux 目录结构与编译
 
-- 只有 Windows 版，Mac 和 Linux 用不了。
-- 自动更新第一次要手动填一次源：点右下「检查更新」会弹框让你填 `xyc-launcher/Launcher`，填一次就记进 `config.json`，之后启动自动查。不填的话自动检查直接跳过，等于没更新。
-- 自动更新可能被 GitHub 限流：同一 IP 每小时只给 60 次 API 请求，报错就过一会儿再点。
-- 微软登录要输设备码，得跳浏览器手动输入一次性码，比网页回调多一步。
-- 提示「未获取到 Minecraft 资料」：说明这个微软账号没买 Java 版，先用离线模式就是了。
-- 首次启动要下 Java，几十 MB，网速慢会停在下载阶段，等它跑完就行。
-- Forge / NeoForge 靠官方 installer 安装，国内网络偶尔超时，重试一次通常就好。
-- 整合包只认 `.mrpack`，CurseForge 的 zip 格式需要先转换。
-- 加载器版本列表走国内镜像，镜像没同步时会缺版本，换下载源或稍后刷新。
-- P2P 服务偏脆：有人连着不发请求会拖慢局域网互传。
+```
+xyc-launcher-linux/
+├── run.sh                 主启动脚本（自动识别 X11/Wayland，自动找/下 Java）
+├── wayland-check.sh       Wayland 原生支持诊断
+├── build.sh               从源码重新编译 launcher.jar
+├── install-desktop.sh     注册到应用菜单/桌面
+├── xyc-launcher.desktop   桌面项模板
+├── launcher.jar           启动器本体（跨平台）
+├── config.json            首次运行后自动生成（含账号，勿外发）
+├── .jbr/                  Wayland 原生运行时（首次在 Wayland 下运行自动下载）
+├── .minecraft/            游戏目录（版本/库/资源/运行时/整合包实例）
+├── src/                   完整 Java 源码
+├── assets/icon.png        图标
+├── HeadlessTest.java      无头逻辑自测
+├── LICENSE                MIT
+└── SECURITY.md            安全说明
+```
+
+从源码重新编译需要 JDK（含 `javac`，如 `sudo apt install openjdk-21-jdk`）：
+
+```bash
+./build.sh
+```
+
+会用源码重建 `launcher.jar`。想用别的 JDK：`JAVAC=/path/to/javac JAR=/path/to/jar ./build.sh`。
+
+自测：
+
+```bash
+mkdir -p out && javac -encoding UTF-8 -cp launcher.jar -d out HeadlessTest.java
+java -cp out:launcher.jar HeadlessTest
+```
+
+## 常见问题
+
+- **Windows 首次运行弹「未知发布者」**：exe 是自签名证书，没有 CA 背书，属正常现象，见「校验与签名」。
+- **Linux 双击 run.sh 没反应**：文件管理器需先允许「作为程序执行」，或直接在终端 `./run.sh`。
+- **提示下载 Java 失败**：系统里没检测到 Java 且网络不通。手动装 Java 17+ 后设 `JAVA_HOME`，或把任意 JDK 解压到 `.minecraft/runtime/` 下即可，脚本会优先用本地的。
+- **Linux Wayland 下没走原生、提示走 XWayland**：因为本地 Java 不是 JBR。这是默认行为（不下载）；想要原生就设 `XYC_FORCE_NATIVE_WAYLAND=1` 自动下载 JBR，或 `JBR_HOME` 指定已有 JBR。
+- **Linux Wayland 下窗口样式怪 / 输入法异常**：JBR WLToolkit 的实验性限制，`XYC_UI=x11 ./run.sh` 可回退 XWayland。
+- **Linux 中文显示成方块**：系统缺少中文字体，安装 `fonts-noto-cjk`（Debian/Ubuntu）或 `wqy-microhei` 后重启启动器。
+- **自动更新第一次要手动填一次源（Windows）**：点右下「检查更新」会弹框让你填 `xyc-launcher/Launcher`，填一次就记进 `config.json`。不填则自动检查跳过。
+- **自动更新可能被 GitHub 限流**：同一 IP 每小时只给 60 次 API 请求，报错就过一会儿再点。
+- **微软登录要输设备码**：需跳浏览器手动输入一次性码，比网页回调多一步。
+- **提示「未获取到 Minecraft 资料」**：这个微软账号没买 Java 版，先用离线模式。
+- **首次启动要下 Java**：几十 MB，网速慢会停在下载阶段，等它跑完。
+- **Forge / NeoForge 安装超时**：靠官方 installer，国内网络偶尔超时，重试通常就好。
+- **整合包只认 `.mrpack`**：CurseForge 的 zip 格式需要先转换。
+- **加载器版本列表缺版本**：走国内镜像，镜像没同步时会缺，换下载源或稍后刷新。
+- **P2P 服务偏脆（Windows）**：有人连着不发请求会拖慢局域网互传。
+- **游戏启动崩溃且日志提到 Java 版本**：老版本（1.12 及以前）必须用 Java 8，新版用 17/21；启动器会自动按版本准备，若手动指定过 `javaPath`，可在设置里改回「自动」。
+- **想换游戏目录**：改 `config.json` 的 `gameDir`，或在同目录建 `.minecraft` 文件夹即可（默认就是它）。
 
 ## 安全提示
 
@@ -117,36 +250,28 @@ Release 里的 exe 是「.NET 外壳 + 内嵌 jar」两层，拆出来的东西�
 
 删掉 `config.json`，那是你的账号文件。登录令牌在新版里是加密存放的，密钥单独一个文件，所以整个启动器文件夹都别直接发出去。别接收别人发来的 `config.json`，也不要拿别人的配置覆盖自己的，用启动器自己生成的那份。
 
-### P2P
-
-P2P 没有口令。同一局域网里连上端口就能取走游戏目录里的文件（日志、存档、别的启动器留下的账号库等，前提是猜对路径），还会广播这台机器的电脑名。
-
-在公共 Wi-Fi、网吧、公司网络里别开着 P2P：那等于把游戏目录挂在局域网里给人看。不需要就把 `p2pEnabled` 关掉。
-
-首次启动会被 Windows 防火墙拦一下，选「专用网络」允许，否则同网段看不见对方。
-
 ### 配置与执行
 
-配置里的 Java 路径会被直接执行，只校验文件名是不是 `java.exe` 和 `-version` 的输出。别用别人给的配置。
+配置里的 Java 路径会被直接执行（Windows 只校验文件名是不是 `java.exe` 和 `-version` 的输出）。别用别人给的配置。
 
 ### 下载源
 
-版本和加载器尽量从官方或 BMCLAPI 下，别为了快随手切到不认识的镜像。`mcimirror.com` 这类第三方镜像提供的是版本清单，选它就意味着装哪个客户端由它决定。
+版本和加载器尽量从官方或 BMCLAPI 下，别为了快随手切到不认识的镜像。`mcimirror.com` 这类第三方镜像提供的是版本清单，选它就意味着装哪个客户端由它决定。Java 运行库和皮肤站插件下载时没做哈希校验，只靠 HTTPS 保证来源可信。
 
-Java 运行库和皮肤站插件下载时没做哈希校验，只靠 HTTPS 保证来源可信。
+### P2P（Windows）
 
-### 证书回落
+P2P 没有口令。同一局域网里连上端口就能取走游戏目录里的文件（日志、存档、别的启动器留下的账号库等，前提是猜对路径），还会广播这台机器的电脑名。
 
-1.0.1 起 HTTPS 会在 Java 自带证书校验失败时回落到 Windows 根证书库。装过企业代理 / 抓包工具根证书的机器，那些连接也会被当成可信，介意就自己留意。
+在公共 Wi-Fi、网吧、公司网络里别开着 P2P：那等于把游戏目录挂在局域网里给人看。不需要就把 `p2pEnabled` 关掉。首次启动会被 Windows 防火墙拦一下，选「专用网络」允许，否则同网段看不见对方。
 
-## 许可
+### 证书回落（Windows）
 
-MIT License，完整条款见 [LICENSE](LICENSE)。
+见上方「证书回落」。装过企业代理 / 抓包工具根证书的机器，那些 HTTPS 连接也会被当成可信，介意就自己留意。
 
-Copyright (C) 2026 xycwww2025
+## 许可与声明
+
+MIT License，见 [LICENSE](LICENSE)。Copyright (C) 2026 xycwww2025。
 
 可以自由使用、修改、再分发，包括商业用途，也可闭源使用；只需保留版权声明和许可声明。不提供任何担保。
-
-## 声明
 
 Minecraft 是 Mojang Studios 的商标。本项目为非官方工具，不提供游戏本体，与 Mojang Studios / Microsoft 无关联。

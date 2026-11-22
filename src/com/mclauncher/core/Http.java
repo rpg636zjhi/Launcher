@@ -14,7 +14,18 @@ import java.nio.file.Path;
 public final class Http {
     private Http() {}
 
-    public static final String UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) xycLauncher/2.0";
+    public static final String UA = buildUA();
+
+    private static String buildUA() {
+        String os = System.getProperty("os.name", "").toLowerCase();
+        String arch = System.getProperty("os.arch", "").toLowerCase();
+        String platform;
+        if (os.contains("win")) platform = "Windows NT 10.0; Win64; x64";
+        else if (os.contains("mac")) platform = "Macintosh; Intel Mac OS X 10_15_7";
+        else platform = "X11; Linux " + (arch.contains("aarch64") || arch.contains("arm")
+                ? "aarch64" : "x86_64");
+        return "Mozilla/5.0 (" + platform + ") xycLauncher/2.1-linux";
+    }
     public static final int CONNECT_TIMEOUT = 20000;
     public static final int READ_TIMEOUT = 60000;
 
