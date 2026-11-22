@@ -2,7 +2,7 @@
 
 一个极简的 Minecraft Java 版启动器。安装包 184 KB，不捆 Java、不捆依赖，双击即用；第一次打开会按游戏版本要求自己配好运行时。
 
-仅支持 Minecraft: Java Edition（Windows）。基岩版 / 携带版 / PE 0.14 等老版本客户端不在支持范围内。
+仅支持 Minecraft: Java Edition（Windows）
 
 ## 下载
 
