@@ -47,14 +47,18 @@ chmod +x run.sh
 
 ## 校验与签名（Windows）
 
-两个 exe 都是 202,320 字节（即表中的 198 KB）。下载后可核对哈希：
+原始两个 exe 都是 202,320 字节（即表中的 198 KB），`-javafix` 修复包为 195,072 字节。下载后可核对哈希：
 
 | 文件 | SHA-256 |
 | --- | --- |
 | `xyc.Launcher.v1.0.5.exe` | `323774195b1437c00dfc437cf3d13f1af728b8b6e0b8c0928528c39e1dfaca74` |
 | `xyc.Launcher.32bit.v1.0.5.exe` | `dce75480d0e467ebe9fcd714535e1f960a57ff178e3b074c5d8f01508fe7f78a` |
+| `xyc.Launcher.v1.0.5-javafix.exe` | `0b5ccff5bfdc1e0243157d240a1be78b19af2fdb0b72aa5e2934832846ffb9fa` |
+| `xyc.Launcher.32bit.v1.0.5-javafix.exe` | `eb5cb130b42a3e63b7e359060d97f35f3520194a8292f9bf8db93ee53378fc3a` |
 
 对得上就是原版，对不上别运行。
+
+`-javafix` 只替换了 exe 内嵌的 launcher.jar：修复了老版本游戏误选 Java 25 的崩溃，Java 选择界面也改成了「按游戏要求版本（推荐）」。签名私钥不在仓库，重新打包后签名已移除；等朋友用原证书重签即可恢复签名状态。
 
 exe 带 Authenticode 数字签名（SHA-256 / RSA，含 DigiCert 时间戳），证书 Subject 是 `_xycwww_`，有效期到 2036 年；文件属性里是 `xyc Launcher 1.0.5.0`、© `_xycwww_`。
 
