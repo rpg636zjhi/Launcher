@@ -358,6 +358,29 @@ if [ -n "${XYC_JAVA:-}" ]; then
     fi
 fi
 
+# [fix 2026-11-22] 为游戏 Java 8 需求预置运行时软链
+# 1.0.5 的 JavaRuntime.detectSystemJava(8) 有 bug：会选成系统里版本最高的 Java
+# （比如 Java 25），而不是恰好 8，导致 1.8.9 用 Java 25 启动、lwjgl 报
+# SUNWprivate_1.1 not found 崩溃。ensure() 会优先查 runtime/jdk-8/bin/java，
+# 这里探测系统 Java 8 并软链过去，让 ensure() 命中正确的版本，绕过该 bug。
+prepare_game_java8() {
+    local rt="$ROOT/.minecraft/runtime/jdk-8"
+    [ -e "$rt/bin/java" ] && return 0
+    local d j8=""
+    for d in /usr/lib/jvm/* /opt/java/* /opt/jdk* /usr/java/*; do
+        for j in "$d/bin/java" "$d/jre/bin/java"; do
+            [ -x "$j" ] || continue
+            if [ "$(java_major "$j" 2>/dev/null)" = "8" ]; then j8="$j"; break 2; fi
+        done
+    done
+    if [ -n "$j8" ]; then
+        mkdir -p "$rt/bin"
+        ln -sfn "$j8" "$rt/bin/java"
+        log "已为老版本游戏预置 Java 8 运行时：$rt/bin/java -> $j8"
+    fi
+}
+prepare_game_java8
+
 log "使用 Java: $JAVA"
 if [ "${#JVM_ARGS[@]}" -gt 0 ]; then log "JVM 参数: ${JVM_ARGS[*]}"; fi
 log "启动 xyc Launcher …"
