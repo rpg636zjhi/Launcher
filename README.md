@@ -147,7 +147,7 @@ chmod +x wayland-check.sh
 
 ### Java 自动检测与下载
 
-外观设置里可以直接换启动器图标：选中图片后复制到启动器目录的 `icon.png`，下次打开仍然生效；“恢复默认图标”可撤销。
+外观设置里可以直接换启动器图标：选中图片后复制到启动器目录的 `icon.png`，窗口图标和界面左上角的 logo 会一起换掉，下次打开仍然生效；“恢复默认图标”可撤销。
 
 启动时读取版本 JSON 的 `javaVersion` 要求；本机有可用的 Java 就直接用，否则自动下载对应版本并解压。Windows 下从 `JAVA_HOME`、注册表、`.minecraft\runtime`、`PATH` 里找；Linux 下从内置运行时、`JAVA_HOME`、`PATH` 及常见 JVM 目录里找。
 
