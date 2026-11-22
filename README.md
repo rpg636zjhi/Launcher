@@ -10,8 +10,8 @@
 
 | 版本 | 体积 | 文件 |
 | --- | --- | --- |
-| 64 位（推荐） | 184 KB | `xyc.Launcher1.0.1.exe` |
-| 32 位 | 184 KB | `xyc.Launcher.32bit1.0.1.exe` |
+| 64 位（推荐） | 198 KB | `xyc.Launcher.v1.0.5.exe` |
+| 32 位 | 198 KB | `xyc.Launcher.32bit.v1.0.5.exe` |
 
 - 系统：Windows + .NET Framework 4.x（Win10 / Win11 自带，不用另装）
 - Java：不用手动装。依次在 `JAVA_HOME`、注册表、`.minecraft\runtime`、`PATH` 里找，找不到就自动下载对应版本并解压
@@ -47,16 +47,16 @@ chmod +x run.sh
 
 ## 校验与签名（Windows）
 
-两个 exe 都是 187,984 字节（即表中的 184 KB）。下载后可核对哈希：
+两个 exe 都是 202,320 字节（即表中的 198 KB）。下载后可核对哈希：
 
 | 文件 | SHA-256 |
 | --- | --- |
-| `xyc.Launcher1.0.1.exe` | `e7477d2eaa6458cd6c2268aad4319e3cb2eb70e99e659a3a65f56944bcc8fa6a` |
-| `xyc.Launcher.32bit1.0.1.exe` | `ff6df2bcb121b1db18f676231295045db9dfce6ef3023fe7b05e1bb61c1a70e4` |
+| `xyc.Launcher.v1.0.5.exe` | `323774195b1437c00dfc437cf3d13f1af728b8b6e0b8c0928528c39e1dfaca74` |
+| `xyc.Launcher.32bit.v1.0.5.exe` | `dce75480d0e467ebe9fcd714535e1f960a57ff178e3b074c5d8f01508fe7f78a` |
 
 对得上就是原版，对不上别运行。
 
-exe 带 Authenticode 数字签名（SHA-256 / RSA，含 DigiCert 时间戳），证书 Subject 是 `_xycwww_`，有效期到 2036 年；文件属性里是 `xyc Launcher 1.0.1.0`、© `_xycwww_`。
+exe 带 Authenticode 数字签名（SHA-256 / RSA，含 DigiCert 时间戳），证书 Subject 是 `_xycwww_`，有效期到 2036 年；文件属性里是 `xyc Launcher 1.0.5.0`、© `_xycwww_`。
 
 这张证书是自签名的，没有 CA 签发，所以 Windows 第一次运行会弹「未知发布者」。这不是文件有问题，只是没有第三方为身份背书；要消掉这个提示只能买代码签名证书（OV/EV，一年几百到几千）。
 
