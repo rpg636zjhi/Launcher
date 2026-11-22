@@ -177,6 +177,3 @@ MIT License，见 [LICENSE](LICENSE)。Copyright (C) 2026 xycwww2025。
 
 Minecraft 是 Mojang Studios 的商标。本项目为非官方工具，不提供游戏本体，与 Mojang Studios / Microsoft 无关联。
 
----
-
-移植维护说明：Linux 版相对原版仅改动 `src/com/mclauncher/core/JavaRuntime.java`（跨平台 Java 供应与 tar.gz 解压）、`src/com/mclauncher/core/Http.java`（UA 按系统生成），其余核心源码未改动，并新增上述 Linux 脚本（含 Wayland 原生模式与诊断工具）。
