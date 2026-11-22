@@ -19,11 +19,11 @@
 
 ### Linux
 
-绿色便携，把整个文件夹放到任意位置即可运行，配置写在同目录的 `config.json`，不写系统目录、不改 PATH。
+绿色便携，把整个文件夹放到任意位置即可运行，配置写在同目录的 `config.json`，不写系统目录、不改 PATH。Linux 版是仓库里的 `linux/` 文件夹，自带脚本、jar、源码和图标，可以整个拷走独立使用。
 
 ```bash
-# 1. 解压/下载后进入目录
-cd xyc-launcher-linux
+# 1. 解压/下载后进入 linux 目录
+cd linux
 
 # 2. 赋予执行权限（仅首次）
 chmod +x run.sh
@@ -189,10 +189,16 @@ chmod +x wayland-check.sh
 
 1.0.1 起 HTTPS 会在 Java 自带证书校验失败时回落到 Windows 根证书库。装过企业代理 / 抓包工具根证书的机器，那些连接也会被当成可信，介意就自己留意。
 
+## 仓库结构
+
+仓库根目录是 Windows 版（`.exe` 在 Releases 下载，`run.bat` / `build.bat` / `unpacked/` 在此），`linux/` 文件夹是完整的 Linux 版，两套互不干扰。
+
 ## Linux 目录结构与编译
 
+`linux/` 是自包含的一整份，拷到任意位置都能跑：
+
 ```
-xyc-launcher-linux/
+linux/
 ├── run.sh                 主启动脚本（自动识别 X11/Wayland，自动找/下 Java）
 ├── wayland-check.sh       Wayland 原生支持诊断
 ├── build.sh               从源码重新编译 launcher.jar
